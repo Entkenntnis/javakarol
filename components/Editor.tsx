@@ -52,7 +52,7 @@ export const Editor = ({ innerRef }: EditorProps) => {
 
                 if (t.docChanged) {
                   if (core.ws.ui.state == 'ready') {
-                    setLoading(core)
+                    //setLoading(core)
                   }
                 }
 

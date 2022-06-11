@@ -56,12 +56,21 @@ export function createPuzzleWorkspaceState(
 function createBaseWorkspace(): WorkspaceStateBase {
   return {
     world: createWorld(5, 10, 6),
-    code: '',
+    code: `public class Hallo {
+  public static void main(String[] args) {
+    Welt w = new Welt("wer");
+    Roboter r = new Roboter(w);
+    r.Hinlegen();
+    r.Schritt();
+    r.LinksDrehen(4);
+  }
+}
+`,
     ui: {
       messages: [],
       gutter: 0,
       gutterReturns: [],
-      state: 'loading',
+      state: 'ready',
       wireframe: false,
       needsTextRefresh: false,
       preview: undefined,

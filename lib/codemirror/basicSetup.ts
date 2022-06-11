@@ -20,6 +20,7 @@ import {
   syntaxTree,
   syntaxHighlighting,
   HighlightStyle,
+  bracketMatching,
 } from '@codemirror/language'
 import {
   cursorDocEnd,
@@ -34,15 +35,18 @@ import {
 } from '@codemirror/commands'
 import {
   autocompletion,
+  closeBrackets,
+  closeBracketsKeymap,
   completionKeymap,
   CompletionSource,
 } from '@codemirror/autocomplete'
 import { linter, lintKeymap } from '@codemirror/lint'
 import { styleTags, tags as t } from '@lezer/highlight'
+import { java } from '@codemirror/lang-java'
 
-import { parser } from './parser/parser.js'
+//import { parser } from './parser/parser.js'
 
-const parserWithMetadata = parser.configure({
+/*const parserWithMetadata = parser.configure({
   props: [
     styleTags({
       Command: t.atom,
@@ -83,16 +87,7 @@ const parserWithMetadata = parser.configure({
       Cmd: continuedIndent({ except: /^\s*(ende|\*)(a|A)nweisung(\s|$)/ }),
     }),
   ],
-})
-
-const exampleLanguage = LRLanguage.define({
-  parser: parserWithMetadata,
-  languageData: {
-    indentOnInput:
-      /^\s*((ende|\*)((w|W)iederhole|(w|W)enn|(a|A)nweisung))|sonst/,
-    autocomplete: buildMyAutocomplete(),
-  },
-})
+})*/
 
 const Theme = EditorView.theme({
   '&': {
@@ -163,7 +158,6 @@ export const defaultHighlightStyle = HighlightStyle.define([
   { tag: t.definition(t.propertyName), color: '#00c' },
   { tag: t.comment, color: '#940' },
   { tag: t.invalid, color: '#f00' },
-  { tag: t.labelName, color: '#b33300' },
 ])
 
 export const basicSetup = (props: BasicSetupProps) => [
@@ -174,25 +168,28 @@ export const basicSetup = (props: BasicSetupProps) => [
   indentOnInput(),
   syntaxHighlighting(defaultHighlightStyle),
   highlightActiveLine(),
+  bracketMatching(),
+  closeBrackets(),
   keymap.of([
+    ...closeBracketsKeymap,
     ...defaultKeymap,
     ...historyKeymap,
     ...lintKeymap,
-    ...completionKeymap,
-    { key: 'Tab', run: myTabExtension },
+    //...completionKeymap,
+    //{ key: 'Tab', run: myTabExtension },
     indentWithTab,
-    {
+    /*{
       key: 'Ctrl-s',
       run: autoFormat,
-    },
+    },*/
   ]),
-  autocompletion(),
+  //autocompletion(),
   EditorState.tabSize.of(2),
   editable.of(EditorView.editable.of(true)),
-  exampleLanguage,
+  java(),
   linter(props.l),
   Theme,
-  myHighlightPlugin,
+  //myHighlightPlugin,
   EditorView.lineWrapping,
 ]
 

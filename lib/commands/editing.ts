@@ -1,4 +1,5 @@
 import { EditorView } from '@codemirror/view'
+import { compileJava } from '../language/compileJava'
 
 import { compile } from '../language/compiler'
 import { Core } from '../state/core'
@@ -15,14 +16,17 @@ export function lint(core: Core, view: EditorView) {
     state.code = code
   })
 
-  const { warnings, output } = compile(view)
+  const { warnings, output } = compileJava(view)
   warnings.sort((a, b) => a.from - b.from)
 
   if (warnings.length == 0) {
-    patch(core, output)
-    setTimeout(() => {
+    //patch(core, output)
+    /*setTimeout(() => {
       execPreview(core)
-    }, 10)
+    }, 10)*/
+    core.mutateWs(({ ui }) => {
+      ui.state = 'ready'
+    })
   } else {
     core.mutateWs(({ vm, ui }) => {
       vm.bytecode = undefined
