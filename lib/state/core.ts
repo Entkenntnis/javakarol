@@ -10,9 +10,8 @@ import {
 } from 'react'
 import produce, { Draft } from 'immer'
 
-import { CoreRefs, CoreState, WorkspaceState, World } from './types'
+import { CoreRefs, CoreState, Puzzle, WorkspaceState, World } from './types'
 import { createDefaultCoreState } from './create'
-import { puzzles } from '../data/puzzles'
 
 // set up core within app
 export function useCreateCore() {
@@ -63,11 +62,8 @@ export class Core {
     return this.state.puzzleWorkspace || this.state.editorWorkspace
   }
 
-  get puzzle() {
-    if (!this.state.puzzleWorkspace) {
-      throw 'bad'
-    }
-    return puzzles.find((x) => x.id == this.state.puzzleWorkspace!.id)!
+  get puzzle(): Puzzle {
+    throw 'deprecated'
   }
 
   // always mutate core state with this function

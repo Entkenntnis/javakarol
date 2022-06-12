@@ -1,7 +1,6 @@
 import { EditorView } from '@codemirror/view'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import clsx from 'clsx'
-import { StaticImageData } from 'next/image'
 import { ReflexContainer, ReflexElement, ReflexSplitter } from 'react-reflex'
 import {
   faArrowRight,
@@ -9,34 +8,9 @@ import {
   faCheckCircle,
   faCircleExclamation,
   faPlay,
-  faShare,
-  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { forceLinting } from '@codemirror/lint'
 import { cursorDocEnd } from '@codemirror/commands'
-
-import schrittImg from '../public/schritt.png'
-import hinlegenImg from '../public/hinlegen.png'
-import aufhebenImg from '../public/aufheben.png'
-import linksdrehenImg from '../public/linksdrehen.png'
-import rechtsdrehenImg from '../public/rechtsdrehen.png'
-import markesetzenImg from '../public/markesetzen.png'
-import markeloeschenImg from '../public/markeloeschen.png'
-
-import wenndannImg from '../public/wenndann.png'
-import wenndannsonstImg from '../public/wenndannsonst.png'
-import wiederholenmalImg from '../public/wiederholenmal.png'
-import wiederholesolangeImg from '../public/wiederholesolange.png'
-import beendenImg from '../public/beenden.png'
-
-import istwandImg from '../public/istwand.png'
-import nichtistwandImg from '../public/nichtistwand.png'
-import istziegenImg from '../public/istziegel.png'
-import nichtistziegelImg from '../public/nichtistziegel.png'
-import istmarkeImg from '../public/istmarke.png'
-import nichtistmarkeImg from '../public/nichtistmarke.png'
-
-import anweisungImg from '../public/anweisung.png'
 
 import { autoFormat, setEditable } from '../lib/codemirror/basicSetup'
 import { useCore } from '../lib/state/core'
@@ -49,13 +23,8 @@ import { Editor } from './Editor'
 import { textRefreshDone } from '../lib/commands/json'
 import { leavePreMode } from '../lib/commands/puzzle'
 import { focusWrapper } from '../lib/commands/focus'
-import { Share } from './Player'
 
 export function EditArea() {
-  const [section, setSection] = useState('')
-
-  const [menuVisible, setMenuVisible] = useState(false)
-
   const core = useCore()
 
   const codeState = core.ws.ui.state
@@ -81,10 +50,6 @@ export function EditArea() {
       setEditable(view.current, true)
     }
   }, [codeState])
-
-  // eslint is not able to detect deps properly ...
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const blockMenuInner = useMemo(renderBlockMenuInner, [section, menuVisible]) // block menu is slow to render
 
   return (
     <>
@@ -345,162 +310,5 @@ export function EditArea() {
     }
 
     return <div>unbekannt</div>
-  }
-
-  function renderBlockMenu() {
-    return (
-      <div className="bg-gray-50 flex relative h-full border-r-4 border-gray-100">
-        <div className="bg-white flex flex-col h-full justify-start">
-          <div className="flex flex-col">
-            {renderCategory('Bewegung')}
-            {renderCategory('Steuerung')}
-            {renderCategory('Fühlen')}
-            {renderCategory('Anweisung')}
-          </div>
-        </div>
-
-        {blockMenuInner}
-      </div>
-    )
-  }
-
-  function renderCategory(name: string) {
-    return (
-      <div
-        className={clsx(
-          'flex flex-col items-center pb-3 px-2 mt-2',
-          'hover:cursor-pointer text-gray-800 hover:text-blue-500',
-          'transition-colors select-none',
-          name == section && 'bg-gray-200'
-        )}
-        onClick={() => {
-          if (section == name) {
-            setSection('')
-            setMenuVisible(false)
-            return
-          }
-          setSection(name)
-          setMenuVisible(true)
-          setTimeout(() => document.getElementById(name)?.scrollIntoView(), 10)
-        }}
-      >
-        <div
-          className={clsx('w-5 h-5 rounded-full border border-gray-800 mt-3', {
-            'bg-blue-500': name == 'Bewegung',
-            'bg-yellow-400': name == 'Steuerung',
-            'bg-[#06B6D4]': name == 'Fühlen',
-            'bg-red-500': name == 'Anweisung',
-          })}
-        ></div>
-        <div className="text-xs">{name}</div>
-      </div>
-    )
-  }
-
-  function renderBlockMenuInner() {
-    return (
-      <div className={clsx('h-full', !menuVisible && 'hidden')}>
-        <div
-          className="w-52 h-full overflow-y-scroll"
-          onScroll={(e: any) => {
-            const scrollTop = e.currentTarget.scrollTop
-            if (scrollTop < 465) {
-              setSection('Bewegung')
-            } else if (scrollTop < 976) {
-              setSection('Steuerung')
-            } else if (scrollTop < 1299) {
-              setSection('Fühlen')
-            } else {
-              setSection('Anweisung')
-            }
-          }}
-        >
-          {renderCategoryTitle('Bewegung')}
-          {buildProtoBlock('schritt', schrittImg, 'Schritt')}
-          {buildProtoBlock('linksdrehen', linksdrehenImg, 'LinksDrehen')}
-          {buildProtoBlock('rechtsdrehen', rechtsdrehenImg, 'RechtsDrehen')}
-          {buildProtoBlock('hinlegen', hinlegenImg, 'Hinlegen')}
-          {buildProtoBlock('aufheben', aufhebenImg, 'Aufheben')}
-          {buildProtoBlock('markesetzen', markesetzenImg, 'MarkeSetzen')}
-          {buildProtoBlock('markeloeschen', markeloeschenImg, 'MarkeLöschen')}
-          {renderCategoryTitle('Steuerung')}
-          {buildProtoBlock(
-            'wiederholenmal',
-            wiederholenmalImg,
-            'wiederhole 3 mal\n  \nendewiederhole'
-          )}
-          {buildProtoBlock(
-            'wiederholesolange',
-            wiederholesolangeImg,
-            'wiederhole solange \n  \nendewiederhole'
-          )}
-          {buildProtoBlock('wenndann', wenndannImg, 'wenn  dann\n  \nendewenn')}
-          {buildProtoBlock(
-            'wenndannsonst',
-            wenndannsonstImg,
-            'wenn  dann\n  \nsonst\n  \nendewenn'
-          )}
-          {buildProtoBlock('beenden', beendenImg, 'Beenden')}
-          {renderCategoryTitle('Fühlen')}
-          {buildProtoBlock('istwand', istwandImg, 'IstWand')}
-          {buildProtoBlock('nichtistwand', nichtistwandImg, 'NichtIstWand')}
-          {buildProtoBlock('istziegel', istziegenImg, 'IstZiegel')}
-          {buildProtoBlock(
-            'nichtistziegel',
-            nichtistziegelImg,
-            'NichtIstZiegel'
-          )}{' '}
-          {buildProtoBlock('istmarke', istmarkeImg, 'IstMarke')}{' '}
-          {buildProtoBlock('nichtistmarke', nichtistmarkeImg, 'NichtIstMarke')}
-          <div className="h-[calc(100vh-48px)]">
-            {renderCategoryTitle('Anweisung')}
-            {buildProtoBlock(
-              'anweisung',
-              anweisungImg,
-              'Anweisung NeueAnweisung\n  \nendeAnweisung'
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  function renderCategoryTitle(name: string) {
-    return (
-      <>
-        <div id={name} className="pb-[1px]" />
-        <h2 className="my-3 ml-2 text-sm font-bold">{name}</h2>
-      </>
-    )
-  }
-
-  function buildProtoBlock(id: string, image: StaticImageData, code: string) {
-    return (
-      <div className="mb-2 mx-2">
-        <img
-          className="cursor-pointer inline-block mb-[5.5px]"
-          onDoubleClick={() => {
-            if (view.current) {
-              view.current.dispatch(view.current.state.replaceSelection(code))
-              view.current.focus()
-            }
-          }}
-          src={image.src}
-          height={image.height}
-          width={image.width}
-          alt={id}
-          id={`protoblock-${id}`}
-          draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setDragImage(
-              document.getElementById(`protoblock-${id}`)!,
-              0,
-              0
-            )
-            e.dataTransfer.setData('text/plain', code)
-          }}
-        />
-      </div>
-    )
   }
 }
