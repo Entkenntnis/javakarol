@@ -61,38 +61,8 @@ export function Player() {
   })
 
   const actions: { [key: string]: () => void } = {
-    ...(core.ws.type == 'free' || !core.puzzle.disableMovement
-      ? {
-          ArrowLeft: () => {
-            left(core)
-          },
-          ArrowRight: () => {
-            right(core)
-          },
-          ArrowUp: () => {
-            forward(core)
-          },
-          ArrowDown: () => {
-            forward(core, { reverse: true })
-          },
-        }
-      : {}),
-    ...(core.ws.type == 'free'
-      ? {
-          KeyM: () => {
-            toggleMark(core)
-          },
-          KeyH: () => {
-            brick(core)
-          },
-          KeyQ: () => {
-            toggleBlock(core)
-          },
-          KeyA: () => {
-            unbrick(core)
-          },
-        }
-      : {}),
+    ...(core.ws.type == 'free' || !core.puzzle.disableMovement ? {} : {}),
+    ...(core.ws.type == 'free' ? {} : {}),
     ...{
       KeyW: () => {
         toggleWireframe(core)
@@ -156,8 +126,8 @@ export function Player() {
               }}
               tabIndex={1}
               className={clsx(
-                'border-white border-2 mb-32 mt-12 w-max h-max mx-auto cursor-pointer',
-                'outline-none focus:border-green-200 active:border-green-200'
+                'border-white border-2 mb-32 mt-12 w-max h-max mx-auto',
+                'outline-none '
               )}
               ref={wrapper}
               style={{ transform: `scale(${scale})` }}
@@ -170,6 +140,18 @@ export function Player() {
                 }
                 hideKarol={core.ws.ui.hideKarol}
               />
+              <p className="mb-2">Keine Welt geladen.</p>
+              <p>
+                Erstelle eine neue Welt mit{' '}
+                <a
+                  href="https://karol.arrrg.de/"
+                  className="underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Robot Karol
+                </a>
+              </p>
             </div>
           </div>
           <div className="absolute bottom-2 left-2 bg-gray-50">
@@ -181,20 +163,8 @@ export function Player() {
             ))}
           </div>
           {core.ws.type == 'free' && (
-            <div className="absolute right-3 bottom-2">
-              <button
-                className="px-2 py-0.5 bg-yellow-200 hover:bg-yellow-300 rounded"
-                onClick={() => {
-                  setShowShareModal(true)
-                }}
-              >
-                <FaIcon icon={faShare} /> Teilen
-              </button>
-            </div>
-          )}
-          {core.ws.type == 'free' && (
             <div className="absolute left-1 top-1">
-              {core.state.projectTitle ? (
+              {/*core.state.projectTitle ? (
                 <>
                   <button
                     className="rounded px-2 py-0.5 bg-gray-100 hover:bg-gray-200"
@@ -235,9 +205,23 @@ export function Player() {
                   </button>
                   {renderExport()}
                 </>
-              )}
+                  )*/}
             </div>
           )}
+          <div className="absolute right-3 bottom-2">
+            {renderZoomControls()}
+          </div>
+
+          <div className="absolute right-2 top-2">
+            <button
+              className="px-2 py-0.5 bg-yellow-200 hover:bg-yellow-300 rounded"
+              onClick={() => {
+                setShowShareModal(true)
+              }}
+            >
+              <FaIcon icon={faShare} /> Teilen
+            </button>
+          </div>
           {core.ws.type == 'puzzle' && core.ws.progress < 100 && (
             <button
               className={clsx(
@@ -296,7 +280,7 @@ export function Player() {
       <div
         className={clsx(
           'flex-shrink-0 flex justify-around items-center border-t',
-          'h-12'
+          'h-12 hidden'
         )}
       >
         <div>
@@ -627,7 +611,7 @@ function NewWorldSettings({
   }
 }
 
-function Share(props: { onClose: () => void }) {
+export function Share(props: { onClose: () => void }) {
   const [pending, setPending] = useState(false)
   const [id, setId] = useState('')
   const core = useCore()

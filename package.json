@@ -13,11 +13,13 @@
   "dependencies": {
     "@codemirror/autocomplete": "^0.20.3",
     "@codemirror/commands": "^0.20.0",
+    "@codemirror/lang-java": "0.20.1",
     "@codemirror/language": "^0.20.0",
     "@codemirror/lint": "^0.20.0",
     "@codemirror/state": "^0.20.0",
     "@codemirror/view": "^0.20.0",
     "@fortawesome/free-solid-svg-icons": "^6.1.1",
+    "@lezer/common": "^0.16.0",
     "@lezer/highlight": "^0.16.0",
     "clsx": "^1.1.1",
     "immer": "^9.0.5",

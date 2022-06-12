@@ -21,7 +21,7 @@ export function Workspace() {
         <button
           className={clsx(
             'absolute right-1 top-1 rounded z-10',
-            'px-2 py-0.5 bg-blue-300 hover:bg-blue-400'
+            'px-2 py-0.5 bg-blue-300 hover:bg-blue-400 hidden'
           )}
           onClick={() => {
             openMenu(core)

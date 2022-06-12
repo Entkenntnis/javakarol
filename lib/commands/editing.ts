@@ -1,6 +1,8 @@
+import { ensureSyntaxTree } from '@codemirror/language'
+import { Diagnostic } from '@codemirror/lint'
 import { EditorView } from '@codemirror/view'
+import { ClassFile, Compiler } from '../java/compiler'
 
-import { compile } from '../language/compiler'
 import { Core } from '../state/core'
 import { execPreview, hidePreview } from './preview'
 import { patch } from './vm'
@@ -15,14 +17,30 @@ export function lint(core: Core, view: EditorView) {
     state.code = code
   })
 
-  const { warnings, output } = compile(view)
+  const tree = ensureSyntaxTree(view.state, 1000000, 1000)
+
+  let warnings: Diagnostic[] = []
+  let output: ClassFile | null = null
+
+  if (tree) {
+    const compiler = new Compiler(tree, view.state.doc)
+    compiler.compile()
+    warnings = compiler.warnings
+    output = compiler.classFile
+  }
+
   warnings.sort((a, b) => a.from - b.from)
 
-  if (warnings.length == 0) {
-    patch(core, output)
-    setTimeout(() => {
+  if (warnings.length == 0 && output) {
+    //patch(core, output)
+    /*setTimeout(() => {
       execPreview(core)
-    }, 10)
+    }, 10)*/
+    core.mutateWs(({ ui, vm }) => {
+      ui.state = 'ready'
+      vm.bytecode = []
+    })
+    console.log('classfile', output)
   } else {
     core.mutateWs(({ vm, ui }) => {
       vm.bytecode = undefined

@@ -9,6 +9,8 @@ import {
   faCheckCircle,
   faCircleExclamation,
   faPlay,
+  faShare,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { forceLinting } from '@codemirror/lint'
 import { cursorDocEnd } from '@codemirror/commands'
@@ -47,6 +49,7 @@ import { Editor } from './Editor'
 import { textRefreshDone } from '../lib/commands/json'
 import { leavePreMode } from '../lib/commands/puzzle'
 import { focusWrapper } from '../lib/commands/focus'
+import { Share } from './Player'
 
 export function EditArea() {
   const [section, setSection] = useState('')
@@ -165,12 +168,6 @@ export function EditArea() {
   function renderEditor() {
     return (
       <div className="flex h-full overflow-y-auto relative">
-        {core.ws.type == 'free' && (
-          <div className={clsx(codeState == 'running' ? 'hidden' : 'block')}>
-            {renderBlockMenu()}
-          </div>
-        )}
-
         <div className="w-full overflow-auto h-full flex">
           {codeState == 'running' ? (
             <div
@@ -200,9 +197,7 @@ export function EditArea() {
               ))}
             </div>
           ) : (
-            core.ws.type == 'puzzle' && (
-              <div className="w-8 h-full relative flex-shrink-0"></div>
-            )
+            <div className="w-8 h-full relative flex-shrink-0"></div>
           )}
           <div className="w-full h-full flex flex-col">
             <Editor innerRef={view} />
@@ -229,12 +224,11 @@ export function EditArea() {
     if (codeState == 'ready' || codeState == 'running') {
       if (
         core.ws.type == 'free' &&
-        (!core.ws.vm.bytecode || core.ws.vm.bytecode.length == 0)
+        !core.ws.vm.bytecode /*|| core.ws.vm.bytecode.length == 0*/
       ) {
         return (
           <div className="m-[11px] mt-[2px]">
-            Schreibe ein Programm für Robot Karol im Editor oder klicke auf{' '}
-            <em>Menü</em> für eine Einführung.
+            Schreibe ein Programm für JavaKarol im Editor.
           </div>
         )
       } else {

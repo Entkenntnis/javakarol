@@ -37,6 +37,14 @@
     "@codemirror/view" "^0.20.0"
     "@lezer/common" "^0.16.0"
 
+"@codemirror/lang-java@0.20.1":
+  version "0.20.1"
+  resolved "https://registry.yarnpkg.com/@codemirror/lang-java/-/lang-java-0.20.1.tgz#1b6d595322f704bafa6a3609ae8f7cf1b3fa453b"
+  integrity sha512-D7CFKgO0Lq4I/z5ZxGfCf/WvMnkYajWe8LyJzmC6Nuf8dJq9VKiplP78THMWGLv/OEYZDqJvI/z3ZJtM+HE54Q==
+  dependencies:
+    "@codemirror/language" "^0.20.0"
+    "@lezer/java" "^0.16.0"
+
 "@codemirror/language@^0.20.0":
   version "0.20.2"
   resolved "https://registry.yarnpkg.com/@codemirror/language/-/language-0.20.2.tgz#31c3712eac2251810986272dcd6a50510e0c1529"
@@ -132,6 +140,14 @@
   integrity sha512-iE5f4flHlJ1g1clOStvXNLbORJoiW4Kytso6ubfYzHnaNo/eo5SKhxs4wv/rtvwZQeZrK3we8S9SyA7OGOoRKQ==
   dependencies:
     "@lezer/common" "^0.16.0"
+
+"@lezer/java@^0.16.0":
+  version "0.16.0"
+  resolved "https://registry.yarnpkg.com/@lezer/java/-/java-0.16.0.tgz#670c5a7e9885c02daab431bbb98661485caa659e"
+  integrity sha512-eHVeKZbqVodQ+RSgoGfEcTic8QUuOPR0rmj0wVFlmaylwkGlhUwq3oST3sy07hp++hL2sqAgaod96cRrjfnumw==
+  dependencies:
+    "@lezer/highlight" "^0.16.0"
+    "@lezer/lr" "^0.16.0"
 
 "@lezer/lr@^0.16.0":
   version "0.16.3"

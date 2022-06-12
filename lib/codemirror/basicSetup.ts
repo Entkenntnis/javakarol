@@ -14,12 +14,11 @@ import {
 import { EditorState, Compartment, Range } from '@codemirror/state'
 import {
   indentOnInput,
-  continuedIndent,
-  indentNodeProp,
-  LRLanguage,
   syntaxTree,
   syntaxHighlighting,
   HighlightStyle,
+  bracketMatching,
+  defaultHighlightStyle,
 } from '@codemirror/language'
 import {
   cursorDocEnd,
@@ -34,15 +33,17 @@ import {
 } from '@codemirror/commands'
 import {
   autocompletion,
+  closeBrackets,
+  closeBracketsKeymap,
   completionKeymap,
   CompletionSource,
 } from '@codemirror/autocomplete'
 import { linter, lintKeymap } from '@codemirror/lint'
-import { styleTags, tags as t } from '@lezer/highlight'
+import { java } from '@codemirror/lang-java'
 
-import { parser } from './parser/parser.js'
+//import { parser } from './parser/parser.js'
 
-const parserWithMetadata = parser.configure({
+/*const parserWithMetadata = parser.configure({
   props: [
     styleTags({
       Command: t.atom,
@@ -83,16 +84,7 @@ const parserWithMetadata = parser.configure({
       Cmd: continuedIndent({ except: /^\s*(ende|\*)(a|A)nweisung(\s|$)/ }),
     }),
   ],
-})
-
-const exampleLanguage = LRLanguage.define({
-  parser: parserWithMetadata,
-  languageData: {
-    indentOnInput:
-      /^\s*((ende|\*)((w|W)iederhole|(w|W)enn|(a|A)nweisung))|sonst/,
-    autocomplete: buildMyAutocomplete(),
-  },
-})
+})*/
 
 const Theme = EditorView.theme({
   '&': {
@@ -140,32 +132,6 @@ export function setEditable(view?: EditorView, value?: boolean) {
   }
 }
 
-export const defaultHighlightStyle = HighlightStyle.define([
-  { tag: t.meta, color: '#7a757a' },
-  { tag: t.link, textDecoration: 'underline' },
-  { tag: t.heading, textDecoration: 'underline', fontWeight: 'bold' },
-  { tag: t.emphasis, fontStyle: 'italic' },
-  { tag: t.strong, fontWeight: 'bold' },
-  { tag: t.strikethrough, textDecoration: 'line-through' },
-  { tag: t.keyword, color: '#708' },
-  {
-    tag: [t.atom, t.bool, t.url, t.contentSeparator],
-    color: '#219',
-  },
-  { tag: [t.literal, t.inserted], color: '#164' },
-  { tag: [t.string, t.deleted], color: '#a11' },
-  { tag: [t.regexp, t.escape, t.special(t.string)], color: '#e40' },
-  { tag: t.definition(t.variableName), color: '#00f' },
-  { tag: t.local(t.variableName), color: '#30a' },
-  { tag: [t.typeName, t.namespace], color: '#085' },
-  { tag: t.className, color: '#167' },
-  { tag: [t.special(t.variableName), t.macroName], color: '#256' },
-  { tag: t.definition(t.propertyName), color: '#00c' },
-  { tag: t.comment, color: '#940' },
-  { tag: t.invalid, color: '#f00' },
-  { tag: t.labelName, color: '#b33300' },
-])
-
 export const basicSetup = (props: BasicSetupProps) => [
   lineNumbers(),
   highlightActiveLineGutter(),
@@ -174,25 +140,28 @@ export const basicSetup = (props: BasicSetupProps) => [
   indentOnInput(),
   syntaxHighlighting(defaultHighlightStyle),
   highlightActiveLine(),
+  bracketMatching(),
+  closeBrackets(),
+  autocompletion(),
   keymap.of([
+    ...closeBracketsKeymap,
     ...defaultKeymap,
     ...historyKeymap,
     ...lintKeymap,
     ...completionKeymap,
-    { key: 'Tab', run: myTabExtension },
+    //{ key: 'Tab', run: myTabExtension },
     indentWithTab,
     {
       key: 'Ctrl-s',
       run: autoFormat,
     },
   ]),
-  autocompletion(),
   EditorState.tabSize.of(2),
   editable.of(EditorView.editable.of(true)),
-  exampleLanguage,
+  java(),
   linter(props.l),
   Theme,
-  myHighlightPlugin,
+  //myHighlightPlugin,
   EditorView.lineWrapping,
 ]
 
