@@ -126,7 +126,7 @@ export function Player() {
               }}
               tabIndex={1}
               className={clsx(
-                'border-white border-2 mb-32 mt-12 w-max h-max mx-auto cursor-pointer',
+                'border-white border-2 mb-32 mt-12 w-max h-max mx-auto',
                 'outline-none '
               )}
               ref={wrapper}
@@ -140,6 +140,18 @@ export function Player() {
                 }
                 hideKarol={core.ws.ui.hideKarol}
               />
+              <p className="mb-2">Keine Welt geladen.</p>
+              <p>
+                Erstelle eine neue Welt mit{' '}
+                <a
+                  href="https://karol.arrrg.de/"
+                  className="underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Robot Karol
+                </a>
+              </p>
             </div>
           </div>
           <div className="absolute bottom-2 left-2 bg-gray-50">

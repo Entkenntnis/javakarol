@@ -224,11 +224,11 @@ export function EditArea() {
     if (codeState == 'ready' || codeState == 'running') {
       if (
         core.ws.type == 'free' &&
-        (!core.ws.vm.bytecode || core.ws.vm.bytecode.length == 0)
+        !core.ws.vm.bytecode /*|| core.ws.vm.bytecode.length == 0*/
       ) {
         return (
           <div className="m-[11px] mt-[2px]">
-            Schreibe ein Programm für Java Karol im Editor.
+            Schreibe ein Programm für JavaKarol im Editor.
           </div>
         )
       } else {

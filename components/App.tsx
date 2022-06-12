@@ -34,9 +34,9 @@ export function App() {
 
   function getTitle() {
     if (core.state.projectTitle) {
-      return `${core.state.projectTitle} - Robot Karol Web`
+      return `${core.state.projectTitle} - JavaKarol`
     } else {
-      return 'Robot Karol Web'
+      return 'JavaKarol'
     }
   }
 }

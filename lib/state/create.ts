@@ -56,13 +56,13 @@ export function createPuzzleWorkspaceState(
 function createBaseWorkspace(): WorkspaceStateBase {
   return {
     world: createWorld(5, 10, 6),
-    code: `public class Hallo {
+    code: `public class Programm {
   public static void main(String[] args) {
-    Welt w = new Welt("wer");
-    Roboter r = new Roboter(w);
-    r.Hinlegen();
-    r.Schritt();
-    r.LinksDrehen(4);
+    Welt welt = new Welt();
+    Roboter karol = new Roboter(welt);
+    karol.Hinlegen();
+    karol.Schritt();
+    karol.LinksDrehen(4);
   }
 }
 `,
