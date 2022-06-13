@@ -2,4 +2,4 @@
 
 Objekt-orientierte Programmierung mit Robot Karol, Java-Syntax, web-basiert.
 
-(alpha version coming soon)
+Zum Editor: [javakarol.arrrg.de](https://javakarol.arrrg.de)
