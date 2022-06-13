@@ -1,9 +1,17 @@
+import {
+  faBook,
+  faCode,
+  faDiagramProject,
+  faExternalLinkAlt,
+  faShare,
+} from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { ReflexElement, ReflexSplitter, ReflexContainer } from 'react-reflex'
 
 import { openMenu } from '../lib/commands/menu'
 import { useCore } from '../lib/state/core'
 import { EditArea } from './EditArea'
+import { FaIcon } from './FaIcon'
 import { FileInput } from './FileInput'
 import { Ping } from './Ping'
 import { Player } from './Player'
@@ -79,21 +87,72 @@ export function Workspace() {
             </button>
           </div>
         )}
-      <ReflexContainer
-        orientation="vertical"
-        windowResizeAware
-        className="h-full"
-      >
-        <ReflexElement className="h-full" minSize={495}>
-          <EditArea />
-        </ReflexElement>
+      <div className="h-full">
+        <div className="h-[calc(100vh-40px)]">
+          <ReflexContainer orientation="vertical" windowResizeAware>
+            <ReflexElement className="h-full" minSize={300}>
+              <EditArea />
+            </ReflexElement>
 
-        <ReflexSplitter style={{ width: 3 }} />
+            <ReflexSplitter style={{ width: 3 }} />
 
-        <ReflexElement minSize={250}>
-          <Player />
-        </ReflexElement>
-      </ReflexContainer>
+            <ReflexElement minSize={200}>
+              <Player />
+            </ReflexElement>
+          </ReflexContainer>
+        </div>
+        <div className="bg-white flex border-t h-[40px] flex-shrink-0">
+          <div className="w-full overflow-auto my-auto flex justify-between">
+            <div className="ml-3 my-1">
+              <button className="hover:underline">
+                <FaIcon
+                  icon={faDiagramProject}
+                  className="text-xs"
+                  style={{ verticalAlign: 0 }}
+                />{' '}
+                Klassendiagramm
+              </button>
+              <span className="border-l border-gray-300 mx-3"></span>
+              <FaIcon
+                icon={faBook}
+                className="text-xs"
+                style={{ verticalAlign: 0 }}
+              />{' '}
+              <button className="hover:underline">API-Referenz</button>
+              <span className="border-l border-gray-300 mx-3"></span>
+              <FaIcon
+                icon={faCode}
+                className="text-xs"
+                style={{ verticalAlign: 0 }}
+              />{' '}
+              <button className="hover:underline">Beispiele</button>
+              <span className="border-l border-gray-300 mx-3"></span>
+              <button className="px-2 rounded bg-yellow-100 hover:bg-yellow-200">
+                <FaIcon
+                  icon={faShare}
+                  className="text-sm"
+                  style={{ verticalAlign: 0 }}
+                />{' '}
+                Code teilen
+              </button>
+              <span className="border-l border-gray-300 mx-3"></span>
+            </div>
+            <div className="mr-3 my-1">
+              <span className="border-l border-gray-300 mx-3"></span>
+              <button className="hover:underline text-blue-600">
+                GitHub{' '}
+                <FaIcon
+                  icon={faExternalLinkAlt}
+                  className="text-xs"
+                  style={{ verticalAlign: 0 }}
+                />
+              </button>
+              <span className="border-l border-gray-300 mx-3"></span>
+              <button className="hover:underline">Datenschutz</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   )
 }

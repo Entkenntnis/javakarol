@@ -135,21 +135,6 @@ export function EditArea() {
             </div>
           </div>
         )}
-        <div className="bg-white flex border-t h-[40px]">
-          <div className="w-full overflow-auto my-auto">
-            <div className="ml-2 my-1">
-              <button className="hover:underline">Klassendiagramm</button>
-              <span className="border-l border-gray-300 mx-3"></span>
-              <button className="hover:underline">API-Referenz</button>
-              <span className="border-l border-gray-300 mx-3"></span>
-              <button className="hover:underline">Beispiele</button>
-              <span className="border-l border-gray-300 mx-3"></span>
-              <button className="hover:underline">
-                <FaIcon icon={faShare} className="text-sm" /> Code teilen
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     </>
   )
