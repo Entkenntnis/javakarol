@@ -189,7 +189,7 @@ export function EditArea() {
     if (codeState == 'ready' || codeState == 'running') {
       if (
         core.ws.type == 'free' &&
-        !core.ws.vm.bytecode /*|| core.ws.vm.bytecode.length == 0*/
+        !core.ws.jvm.classfile /*|| core.ws.vm.bytecode.length == 0*/
       ) {
         return (
           <div className="m-[11px] mt-[2px]">
@@ -212,7 +212,7 @@ export function EditArea() {
                 <option value="slow">langsam</option>
                 <option value="step">Einzelschritt</option>
               </select>
-              {codeState == 'ready' && (
+              {/*codeState == 'ready' && (
                 <label className="ml-2">
                   <input
                     type="checkbox"
@@ -231,7 +231,7 @@ export function EditArea() {
                   />
                   <span className="underline ml-2">V</span>orschau
                 </label>
-              )}
+                  )*/}
             </span>
             {codeState == 'running' ? (
               <span>

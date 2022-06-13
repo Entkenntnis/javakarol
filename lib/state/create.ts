@@ -59,6 +59,7 @@ function createBaseWorkspace(): WorkspaceStateBase {
       needsConfirmation: false,
       confirmation: false,
     },
+    jvm: {},
     settings: {
       speed: 'fast',
     },

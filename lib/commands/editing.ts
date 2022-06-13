@@ -4,8 +4,7 @@ import { EditorView } from '@codemirror/view'
 import { ClassFile, Compiler } from '../java/compiler'
 
 import { Core } from '../state/core'
-import { execPreview, hidePreview } from './preview'
-import { patch } from './vm'
+import { hidePreview } from './preview'
 
 export function lint(core: Core, view: EditorView) {
   if (core.ws.ui.state == 'running' || !view) {
@@ -20,7 +19,7 @@ export function lint(core: Core, view: EditorView) {
   const tree = ensureSyntaxTree(view.state, 1000000, 1000)
 
   let warnings: Diagnostic[] = []
-  let output: ClassFile | null = null
+  let output: ClassFile | undefined = undefined
 
   if (tree) {
     const compiler = new Compiler(tree, view.state.doc)
@@ -32,14 +31,13 @@ export function lint(core: Core, view: EditorView) {
   warnings.sort((a, b) => a.from - b.from)
 
   if (warnings.length == 0 && output) {
-    //patch(core, output)
+    core.mutateWs(({ ui, jvm }) => {
+      ui.state = 'ready'
+      jvm.classfile = output
+    })
     /*setTimeout(() => {
       execPreview(core)
     }, 10)*/
-    core.mutateWs(({ ui, vm }) => {
-      ui.state = 'ready'
-      vm.bytecode = []
-    })
     console.log('classfile', output)
   } else {
     core.mutateWs(({ vm, ui }) => {

@@ -1,3 +1,5 @@
+import { ClassFile } from '../java/compiler'
+
 export type Heading = 'north' | 'east' | 'south' | 'west'
 
 export interface World {
@@ -45,6 +47,10 @@ export interface Ui {
   errorMessages: string[]
 }
 
+export interface JVM {
+  classfile?: ClassFile
+}
+
 export interface Vm {
   bytecode?: Op[]
   pc: number
@@ -66,6 +72,7 @@ export interface WorkspaceStateBase {
   ui: Ui
   code: string
   vm: Vm
+  jvm: JVM
   settings: Settings
 }
 

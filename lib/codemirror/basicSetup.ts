@@ -6,13 +6,14 @@ import {
   Command,
   lineNumbers,
   highlightActiveLineGutter,
+  highlightSpecialChars,
 } from '@codemirror/view'
 import { EditorState, Compartment } from '@codemirror/state'
 import {
   indentOnInput,
   syntaxHighlighting,
   bracketMatching,
-  defaultHighlightStyle,
+  HighlightStyle,
 } from '@codemirror/language'
 import {
   cursorDocEnd,
@@ -31,6 +32,7 @@ import {
 } from '@codemirror/autocomplete'
 import { linter, lintKeymap } from '@codemirror/lint'
 import { java } from '@codemirror/lang-java'
+import { tags } from '@lezer/highlight'
 
 const Theme = EditorView.theme({
   '&': {
@@ -78,6 +80,39 @@ export function setEditable(view?: EditorView, value?: boolean) {
   }
 }
 
+const defaultHighlightStyle = HighlightStyle.define([
+  { tag: tags.meta, color: '#7a757a' },
+  { tag: tags.link, textDecoration: 'underline' },
+  { tag: tags.heading, textDecoration: 'underline', fontWeight: 'bold' },
+  { tag: tags.emphasis, fontStyle: 'italic' },
+  { tag: tags.strong, fontWeight: 'bold' },
+  { tag: tags.strikethrough, textDecoration: 'line-through' },
+  { tag: tags.keyword, color: '#708' },
+  {
+    tag: [
+      tags.atom,
+      tags.bool,
+      tags.url,
+      tags.contentSeparator,
+      tags.labelName,
+    ],
+    color: '#219',
+  },
+  { tag: [tags.literal, tags.inserted], color: '#164' },
+  { tag: [tags.string, tags.deleted], color: '#a11' },
+  { tag: [tags.regexp, tags.escape, tags.special(tags.string)], color: '#e40' },
+  { tag: tags.definition(tags.variableName), color: '#00f' },
+  { tag: tags.local(tags.variableName), color: '#30a' },
+  { tag: [tags.typeName, tags.namespace], color: '#085' },
+  { tag: tags.className, color: '#167' },
+  { tag: [tags.special(tags.variableName), tags.macroName], color: '#256' },
+  { tag: tags.definition(tags.propertyName), color: '#00c' },
+  { tag: tags.comment, color: '#940' },
+  { tag: tags.invalid, color: '#f00' },
+  { tag: tags.variableName, color: '#00f' },
+  { tag: tags.function(tags.variableName), color: '#cc7000' },
+])
+
 export const basicSetup = (props: BasicSetupProps) => [
   lineNumbers(),
   highlightActiveLineGutter(),
@@ -89,6 +124,7 @@ export const basicSetup = (props: BasicSetupProps) => [
   bracketMatching(),
   closeBrackets(),
   autocompletion(),
+  highlightSpecialChars(),
   keymap.of([
     ...closeBracketsKeymap,
     ...defaultKeymap,
