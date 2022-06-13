@@ -27,8 +27,10 @@ export function createFreeModeWorkspaceState(): WorkspaceStateFreeMode {
 
 function createBaseWorkspace(): WorkspaceStateBase {
   return {
-    world: createWorld(5, 10, 6),
-    code: `public class Programm {
+    world: createWorld(0, 0, 0),
+    code: `
+public class Programm {
+
   public static void main(String[] args) {
     Welt welt = new Welt();
     Roboter karol = new Roboter(welt);
@@ -42,7 +44,7 @@ function createBaseWorkspace(): WorkspaceStateBase {
       messages: [],
       gutter: 0,
       gutterReturns: [],
-      state: 'ready',
+      state: 'loading',
       wireframe: false,
       needsTextRefresh: false,
       preview: undefined,

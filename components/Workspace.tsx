@@ -84,13 +84,13 @@ export function Workspace() {
         windowResizeAware
         className="h-full"
       >
-        <ReflexElement className="h-full" minSize={330}>
+        <ReflexElement className="h-full" minSize={495}>
           <EditArea />
         </ReflexElement>
 
         <ReflexSplitter style={{ width: 3 }} />
 
-        <ReflexElement minSize={400}>
+        <ReflexElement minSize={250}>
           <Player />
         </ReflexElement>
       </ReflexContainer>

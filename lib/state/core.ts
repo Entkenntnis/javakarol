@@ -12,6 +12,7 @@ import produce, { Draft } from 'immer'
 
 import { CoreRefs, CoreState, Puzzle, WorkspaceState, World } from './types'
 import { createDefaultCoreState } from './create'
+import { JavaVM } from '../java/vm'
 
 // set up core within app
 export function useCreateCore() {
@@ -42,6 +43,7 @@ export class Core {
   _workspaceStorage: { [key: string]: { world: World; code: string } }
 
   userId: string
+  jvm?: JavaVM
 
   constructor(
     setCoreState: Dispatch<SetStateAction<CoreState>>,

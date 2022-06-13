@@ -14,16 +14,19 @@ type Instruction = LoadInstruction | StoreInstruction | ApiInstruction
 interface LoadInstruction {
   type: 'load-from-frame'
   identifier: string
+  line: number
 }
 
 interface StoreInstruction {
   type: 'store-to-frame'
   identifier: string
+  line: number
 }
 
 interface ApiInstruction {
   type: 'invoke-api-method'
   identifier: string
+  line: number
 }
 
 interface Rule {
@@ -177,11 +180,13 @@ export class Compiler {
             return arg.type
           })
           .join('_')
+        const line = this.doc.lineAt(cursor.from).number
         args.forEach((arg) => {
           if (arg.type == 'Object') {
             this.classFile.bytecode.push({
               type: 'load-from-frame',
               identifier: arg.id,
+              line,
             })
           }
         })
@@ -190,14 +195,19 @@ export class Compiler {
           this.classFile.bytecode.push({
             type: 'invoke-api-method',
             identifier,
+            line,
           })
         } else {
           this.addWarning('Funktion nicht gefunden', cursor)
         }
         frame.store(id, { type: 'object', class: type })
-        this.classFile.bytecode.push({ type: 'store-to-frame', identifier: id })
+        this.classFile.bytecode.push({
+          type: 'store-to-frame',
+          identifier: id,
+          line,
+        })
       } else if (type == 'ExpressionStatement') {
-        this.debug(cursor)
+        //this.debug(cursor)
         let object = ''
         let methodName = ''
         let args: ArgumentList = []
@@ -247,11 +257,14 @@ export class Compiler {
             return arg.type
           })
           .join('_')
+
+        const line = this.doc.lineAt(cursor.from).number
         args.forEach((arg) => {
           if (arg.type == 'Object') {
             this.classFile.bytecode.push({
               type: 'load-from-frame',
               identifier: arg.id,
+              line,
             })
           }
         })
@@ -264,6 +277,7 @@ export class Compiler {
             this.classFile.bytecode.push({
               type: 'invoke-api-method',
               identifier,
+              line,
             })
           } else {
             this.addWarning('Funktion nicht gefunden', cursor)

@@ -36,7 +36,7 @@ export interface Ui {
   messages: Message[]
   gutter: number
   gutterReturns: number[]
-  state: 'ready' | 'loading' | 'running' | 'error'
+  state: 'ready' | 'loading' | 'running' | 'error' | 'stopping'
   wireframe: boolean
   needsTextRefresh: boolean
   preview?: Preview
@@ -45,6 +45,7 @@ export interface Ui {
   hideKarol: boolean
   keepWorldPreference: boolean
   errorMessages: string[]
+  runMessage?: string
 }
 
 export interface JVM {
@@ -52,6 +53,7 @@ export interface JVM {
 }
 
 export interface Vm {
+  // DEPRECATED
   bytecode?: Op[]
   pc: number
   handler?: NodeJS.Timeout

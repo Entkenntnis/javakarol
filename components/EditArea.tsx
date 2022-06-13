@@ -7,7 +7,12 @@ import {
   faArrowTurnUp,
   faCheckCircle,
   faCircleExclamation,
+  faExternalLink,
+  faExternalLinkAlt,
   faPlay,
+  faShare,
+  faSpinner,
+  faStop,
 } from '@fortawesome/free-solid-svg-icons'
 import { forceLinting } from '@codemirror/lint'
 import { cursorDocEnd } from '@codemirror/commands'
@@ -23,6 +28,8 @@ import { Editor } from './Editor'
 import { textRefreshDone } from '../lib/commands/json'
 import { leavePreMode } from '../lib/commands/puzzle'
 import { focusWrapper } from '../lib/commands/focus'
+import { runProgram, stopVM } from '../lib/commands/jvm'
+import { addMessage } from '../lib/commands/messages'
 
 export function EditArea() {
   const core = useCore()
@@ -119,10 +126,27 @@ export function EditArea() {
           </ReflexContainer>
         )}
         {core.ws.type == 'free' && renderEditor()}
-        <div className="bg-white flex border-t">
-          <div className="w-full overflow-auto min-h-[47px] max-h-[200px]">
-            <div className="flex justify-between mt-[9px]">
-              {renderProgramControl()}
+        {core.ws.ui.state == 'error' && (
+          <div className="bg-white flex border-t">
+            <div className="w-full overflow-auto min-h-[47px] max-h-[200px]">
+              <div className="flex justify-between mt-[9px]">
+                {renderProgramControl()}
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="bg-white flex border-t h-[40px]">
+          <div className="w-full overflow-auto my-auto">
+            <div className="ml-2 my-1">
+              <button className="hover:underline">Klassendiagramm</button>
+              <span className="border-l border-gray-300 mx-3"></span>
+              <button className="hover:underline">API-Referenz</button>
+              <span className="border-l border-gray-300 mx-3"></span>
+              <button className="hover:underline">Beispiele</button>
+              <span className="border-l border-gray-300 mx-3"></span>
+              <button className="hover:underline">
+                <FaIcon icon={faShare} className="text-sm" /> Code teilen
+              </button>
             </div>
           </div>
         </div>
@@ -133,6 +157,52 @@ export function EditArea() {
   function renderEditor() {
     return (
       <div className="flex h-full overflow-y-auto relative">
+        <div className="absolute top-2 right-0   z-50">
+          {core.ws.ui.state == 'running' || core.ws.ui.state == 'stopping' ? (
+            <button
+              className="bg-red-400 rounded px-2 py-0.5 mr-2 hover:bg-red-500 transition-colors"
+              onClick={() => {
+                stopVM(core)
+                addMessage(core, 'Ausführung abgebrochen.')
+              }}
+              disabled={core.ws.ui.state == 'stopping'}
+            >
+              {core.ws.ui.state == 'stopping' ? (
+                <FaIcon icon={faSpinner} className="animate-spin-slow" />
+              ) : (
+                <FaIcon icon={faStop} />
+              )}{' '}
+              Stopp
+            </button>
+          ) : (
+            <button
+              className={clsx(
+                'bg-green-300 rounded px-2 py-0.5 mr-2 transition-colors',
+                'hover:bg-green-400',
+                'disabled:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40'
+              )}
+              disabled={
+                core.ws.ui.state == 'error' || core.ws.ui.state == 'loading'
+              }
+              onClick={() => {
+                if (view.current) {
+                  autoFormat(view.current)
+                  setEditable(view.current, false)
+                  view.current.contentDOM.blur()
+                }
+                runProgram(core)
+                submit_event(`run_${core.ws.type}`, core)
+              }}
+            >
+              {core.ws.ui.state == 'loading' ? (
+                <FaIcon icon={faSpinner} className="animate-spin-slow" />
+              ) : (
+                <FaIcon icon={faPlay} />
+              )}{' '}
+              Start
+            </button>
+          )}
+        </div>
         <div className="w-full overflow-auto h-full flex">
           {codeState == 'running' ? (
             <div
@@ -257,26 +327,7 @@ export function EditArea() {
                   </button>
                 )}
               </span>
-            ) : (
-              <button
-                className={clsx(
-                  'bg-green-300 rounded px-2 py-0.5 mr-2 transition-colors',
-                  'hover:bg-green-400'
-                )}
-                onClick={() => {
-                  if (view.current) {
-                    autoFormat(view.current)
-                    setEditable(view.current, false)
-                    view.current.contentDOM.blur()
-                  }
-                  run(core)
-                  submit_event(`run_${core.ws.type}`, core)
-                }}
-              >
-                <FaIcon icon={faPlay} /> <span className="underline">S</span>
-                tart
-              </button>
-            )}
+            ) : null}
           </>
         )
       }

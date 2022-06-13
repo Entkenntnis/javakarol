@@ -18,6 +18,7 @@ import { createRef, Dispatch, SetStateAction, useEffect, useState } from 'react'
 import { toggleHideKarol } from '../lib/commands/editing'
 import { focusWrapper, focusWrapperDone } from '../lib/commands/focus'
 import { serialize } from '../lib/commands/json'
+import { resetOutput } from '../lib/commands/jvm'
 import { restoreProject } from '../lib/commands/load'
 import { execPreview, hidePreview, showPreview } from '../lib/commands/preview'
 import { initWorld, resetCode } from '../lib/commands/puzzle'
@@ -82,7 +83,10 @@ export function Player() {
     <div className="flex flex-col w-full h-full">
       <div className="flex-grow h-full min-h-0 relative">
         <div
-          className="flex-grow overflow-auto flex flex-col justify-center h-full"
+          className={clsx(
+            'flex-grow overflow-auto flex flex-col justify-center h-full',
+            core.ws.world.dimX == 0 && 'bg-gray-50'
+          )}
           onClick={(e) => {
             wrapper.current?.focus()
           }}
@@ -95,7 +99,7 @@ export function Player() {
                   e.preventDefault()
                   return
                 }
-                if (e.code == 'KeyS') {
+                /*if (e.code == 'KeyS') {
                   if (
                     core.ws.ui.state == 'ready' &&
                     core.ws.vm.bytecode &&
@@ -107,8 +111,8 @@ export function Player() {
                     abort(core)
                   }
                   e.preventDefault()
-                }
-                if (e.code == 'KeyV') {
+                }*/
+                /*if (e.code == 'KeyV') {
                   if (!core.ws.ui.showPreview) {
                     showPreview(core)
                     focusWrapper(core)
@@ -118,49 +122,65 @@ export function Player() {
                     focusWrapper(core)
                   }
                   e.preventDefault()
-                }
-                if (e.code == 'Digit0') {
+                }*/
+                /*if (e.code == 'Digit0') {
                   toggleHideKarol(core)
                   e.preventDefault()
-                }
+                }*/
               }}
               tabIndex={1}
               className={clsx(
-                'border-white border-2 mb-32 mt-12 w-max h-max mx-auto',
-                'outline-none '
+                'mb-32 mt-12 w-max h-max mx-auto',
+                'outline-none'
               )}
               ref={wrapper}
               style={{ transform: `scale(${scale})` }}
             >
-              <View
-                world={core.ws.world}
-                wireframe={core.ws.ui.wireframe}
-                preview={
-                  core.ws.ui.showPreview ? core.ws.ui.preview : undefined
-                }
-                hideKarol={core.ws.ui.hideKarol}
-              />
-              <p className="mb-2">Keine Welt geladen.</p>
-              <p>
-                Erstelle eine neue Welt mit{' '}
-                <a
-                  href="https://karol.arrrg.de/"
-                  className="underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Robot Karol
-                </a>
-              </p>
+              <div className={clsx(core.ws.world.dimX == 0 && 'hidden')}>
+                <View
+                  world={core.ws.world}
+                  wireframe={core.ws.ui.wireframe}
+                  preview={
+                    core.ws.ui.showPreview ? core.ws.ui.preview : undefined
+                  }
+                  hideKarol={core.ws.ui.hideKarol}
+                />
+              </div>
+              {core.ws.world.dimX == 0 && (
+                <img
+                  src="/robotE.png"
+                  alt="Karl sagt hallo"
+                  className="mx-auto opacity-40"
+                />
+              )}
             </div>
           </div>
-          <div className="absolute bottom-2 left-2 bg-gray-50">
-            {core.ws.ui.messages.map((m) => (
-              <div key={`${m.ts}`}>
-                {m.text}
-                {m.count > 1 && <span> (x{m.count})</span>}
-              </div>
-            ))}
+          {core.ws.world.dimX !== 0 && (
+            <div className="absolute bottom-2 left-2 bg-gray-100">
+              {core.ws.ui.messages.map((m) => (
+                <div key={`${m.ts}`}>
+                  {m.text}
+                  {m.count > 1 && <span> (x{m.count})</span>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="absolute right-2 top-2">
+            {' '}
+            <span className="mr-2 mt-1.5 text-gray-700 h-[25px]">
+              {core.ws.ui.runMessage}
+            </span>
+            {core.ws.ui.runMessage && core.ws.ui.state == 'ready' && (
+              <button
+                className="px-2 bg-gray-100 hover:bg-gray-200 rounded h-[25px]"
+                onClick={() => {
+                  resetOutput(core)
+                }}
+              >
+                <FaIcon icon={faXmark} />
+              </button>
+            )}
           </div>
           {core.ws.type == 'free' && (
             <div className="absolute left-1 top-1">
@@ -208,20 +228,6 @@ export function Player() {
                   )*/}
             </div>
           )}
-          <div className="absolute right-3 bottom-2">
-            {renderZoomControls()}
-          </div>
-
-          <div className="absolute right-2 top-2">
-            <button
-              className="px-2 py-0.5 bg-yellow-200 hover:bg-yellow-300 rounded"
-              onClick={() => {
-                setShowShareModal(true)
-              }}
-            >
-              <FaIcon icon={faShare} /> Teilen
-            </button>
-          </div>
           {core.ws.type == 'puzzle' && core.ws.progress < 100 && (
             <button
               className={clsx(
