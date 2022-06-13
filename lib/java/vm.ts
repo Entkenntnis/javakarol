@@ -33,6 +33,8 @@ export class JavaVM {
       } else if (instr.type == 'invoke-api-method') {
         console.log(instr.identifier)
         await javaKarolApi[instr.identifier].invoke(this.stack, this.core)
+      } else if (instr.type == 'push-constant') {
+        this.stack.push(instr.val)
       }
 
       if (this.stopper) {

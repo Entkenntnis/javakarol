@@ -1,4 +1,12 @@
-import { brick, createWorldCmd, forward, left } from '../commands/world'
+import {
+  brick,
+  createWorldCmd,
+  forward,
+  left,
+  resetMark,
+  right,
+  setMark,
+} from '../commands/world'
 import { Core } from '../state/core'
 
 interface ApiMethod {
@@ -9,11 +17,32 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
   Welt_constructor: {
     invoke: async (stack, core) => {
       createWorldCmd(core, 5, 5, 6)
+      stack.push('placeholder_Welt')
+      await sleep(500)
+    },
+  },
+  Welt_constructor_int_int: {
+    invoke: async (stack, core) => {
+      const y = stack.pop()
+      const x = stack.pop()
+      createWorldCmd(core, x, y, 6)
+      stack.push('placeholder_Welt')
+      await sleep(500)
+    },
+  },
+  Welt_constructor_int_int_int: {
+    invoke: async (stack, core) => {
+      const h = stack.pop()
+      const y = stack.pop()
+      const x = stack.pop()
+      createWorldCmd(core, x, y, h)
+      stack.push('placeholder_Welt')
       await sleep(500)
     },
   },
   Roboter_constructor_Welt: {
     invoke: async (stack, core) => {
+      stack.push('placeholder_Roboter')
       stack.pop()
       await sleep(500)
     },
@@ -24,22 +53,70 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
       await sleep(500)
     },
   },
+  Roboter_Hinlegen_int: {
+    invoke: async (stack, core) => {
+      const val = stack.pop()
+      for (let i = 0; i < val; i++) {
+        brick(core)
+        await sleep(500)
+      }
+    },
+  },
   Roboter_Schritt: {
     invoke: async (stack, core) => {
       forward(core)
       await sleep(500)
     },
   },
+  Roboter_Schritt_int: {
+    invoke: async (stack, core) => {
+      const val = stack.pop()
+      for (let i = 0; i < val; i++) {
+        forward(core)
+        await sleep(500)
+      }
+    },
+  },
+  Roboter_LinksDrehen: {
+    invoke: async (stack, core) => {
+      left(core)
+      await sleep(500)
+    },
+  },
   Roboter_LinksDrehen_int: {
     invoke: async (stack, core) => {
-      console.log('links')
-      stack.pop()
-      const val = 4
-      console.log(val)
+      const val = stack.pop()
       for (let i = 0; i < val; i++) {
         left(core)
         await sleep(500)
       }
+    },
+  },
+  Roboter_RechtsDrehen: {
+    invoke: async (stack, core) => {
+      right(core)
+      await sleep(500)
+    },
+  },
+  Roboter_RechtsDrehen_int: {
+    invoke: async (stack, core) => {
+      const val = stack.pop()
+      for (let i = 0; i < val; i++) {
+        right(core)
+        await sleep(500)
+      }
+    },
+  },
+  Roboter_MarkeSetzen: {
+    invoke: async (stack, core) => {
+      setMark(core)
+      await sleep(500)
+    },
+  },
+  Roboter_MarkeLoeschen: {
+    invoke: async (stack, core) => {
+      resetMark(core)
+      await sleep(500)
     },
   },
 }

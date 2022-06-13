@@ -9,7 +9,11 @@ export interface ClassFile {
   bytecode: Instruction[]
 }
 
-type Instruction = LoadInstruction | StoreInstruction | ApiInstruction
+type Instruction =
+  | LoadInstruction
+  | StoreInstruction
+  | ApiInstruction
+  | ConstantInstruction
 
 interface LoadInstruction {
   type: 'load-from-frame'
@@ -26,6 +30,12 @@ interface StoreInstruction {
 interface ApiInstruction {
   type: 'invoke-api-method'
   identifier: string
+  line: number
+}
+
+interface ConstantInstruction {
+  type: 'push-constant'
+  val: any
   line: number
 }
 
@@ -189,6 +199,13 @@ export class Compiler {
               line,
             })
           }
+          if (arg.type == 'int') {
+            this.classFile.bytecode.push({
+              type: 'push-constant',
+              val: arg.val,
+              line,
+            })
+          }
         })
         const identifier = `${type}_constructor${argStr && `_${argStr}`}`
         if (javaKarolApi[identifier]) {
@@ -264,6 +281,13 @@ export class Compiler {
             this.classFile.bytecode.push({
               type: 'load-from-frame',
               identifier: arg.id,
+              line,
+            })
+          }
+          if (arg.type == 'int') {
+            this.classFile.bytecode.push({
+              type: 'push-constant',
+              val: arg.val,
               line,
             })
           }
