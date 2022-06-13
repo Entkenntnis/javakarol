@@ -1,5 +1,3 @@
 # JavaKarol
 
-Robot Karol programmieren mit Java im Browser.
-
-(Entwicklungsphase, noch keine Preview)
+Objekt-orientierte Programmierung mit Robot Karol, Java-Syntax, web-basiert.
