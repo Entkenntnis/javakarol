@@ -46,6 +46,7 @@ export interface Ui {
   keepWorldPreference: boolean
   errorMessages: string[]
   runMessage?: string
+  modal: 'none' | 'share' | 'privacy' | 'diagram' | 'reference' | 'examples'
 }
 
 export interface JVM {

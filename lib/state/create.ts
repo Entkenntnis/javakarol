@@ -53,6 +53,7 @@ public class Programm {
       hideKarol: false,
       keepWorldPreference: false,
       errorMessages: [],
+      modal: 'none',
     },
     vm: {
       pc: 0,

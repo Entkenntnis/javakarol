@@ -4,17 +4,24 @@ import {
   faDiagramProject,
   faExternalLinkAlt,
   faShare,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { ReflexElement, ReflexSplitter, ReflexContainer } from 'react-reflex'
 
 import { openMenu } from '../lib/commands/menu'
+import { closeModal, openModal } from '../lib/commands/modal'
 import { useCore } from '../lib/state/core'
+import { Diagram } from './Diagram'
 import { EditArea } from './EditArea'
+import { Examples } from './Examples'
 import { FaIcon } from './FaIcon'
 import { FileInput } from './FileInput'
 import { Ping } from './Ping'
 import { Player } from './Player'
+import { Privacy } from './Privacy'
+import { Reference } from './Reference'
+import { Share } from './Share'
 
 export function Workspace() {
   const core = useCore()
@@ -104,7 +111,12 @@ export function Workspace() {
         <div className="bg-white flex border-t h-[40px] flex-shrink-0">
           <div className="w-full overflow-auto my-auto flex justify-between">
             <div className="ml-3 my-1">
-              <button className="hover:underline">
+              <button
+                className="hover:underline"
+                onClick={() => {
+                  openModal(core, 'diagram')
+                }}
+              >
                 <FaIcon
                   icon={faDiagramProject}
                   className="text-xs"
@@ -118,16 +130,35 @@ export function Workspace() {
                 className="text-xs"
                 style={{ verticalAlign: 0 }}
               />{' '}
-              <button className="hover:underline">API-Referenz</button>
+              <button
+                className="hover:underline"
+                onClick={() => {
+                  openModal(core, 'reference')
+                }}
+              >
+                API-Referenz
+              </button>
               <span className="border-l border-gray-300 mx-3"></span>
               <FaIcon
                 icon={faCode}
                 className="text-xs"
                 style={{ verticalAlign: 0 }}
               />{' '}
-              <button className="hover:underline">Beispiele</button>
+              <button
+                className="hover:underline"
+                onClick={() => {
+                  openModal(core, 'examples')
+                }}
+              >
+                Beispiele
+              </button>
               <span className="border-l border-gray-300 mx-3"></span>
-              <button className="px-2 rounded bg-yellow-100 hover:bg-yellow-200">
+              <button
+                className="px-2 rounded bg-yellow-100 hover:bg-yellow-200"
+                onClick={() => {
+                  openModal(core, 'share')
+                }}
+              >
                 <FaIcon
                   icon={faShare}
                   className="text-sm"
@@ -139,20 +170,74 @@ export function Workspace() {
             </div>
             <div className="mr-3 my-1">
               <span className="border-l border-gray-300 mx-3"></span>
-              <button className="hover:underline text-blue-600">
+              <a
+                className="hover:underline text-blue-600"
+                href="https://github.com/Entkenntnis/javakarol#readme"
+                target="_blank"
+                rel="noreferrer"
+              >
                 GitHub{' '}
                 <FaIcon
                   icon={faExternalLinkAlt}
                   className="text-xs"
                   style={{ verticalAlign: 0 }}
                 />
-              </button>
+              </a>
               <span className="border-l border-gray-300 mx-3"></span>
-              <button className="hover:underline">Datenschutz</button>
+              <button
+                className="hover:underline"
+                onClick={() => {
+                  openModal(core, 'privacy')
+                }}
+              >
+                Datenschutz
+              </button>
             </div>
           </div>
         </div>
       </div>
+      {core.ws.ui.modal !== 'none' && (
+        <div
+          className={clsx(
+            'fixed inset-0 bg-gray-300 bg-opacity-30 flex justify-around',
+            'items-center z-[200]'
+          )}
+          onClick={() => {
+            closeModal(core)
+          }}
+        >
+          <div
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
+            className={clsx(
+              'fixed mx-auto bg-white opacity-100 rounded z-[300] ',
+              'mb-[20vh]'
+            )}
+            style={{ width: modalWidths[core.ws.ui.modal] }}
+          >
+            {core.ws.ui.modal == 'share' && <Share />}
+            {core.ws.ui.modal == 'privacy' && <Privacy />}
+            {core.ws.ui.modal == 'diagram' && <Diagram />}
+            {core.ws.ui.modal == 'reference' && <Reference />}
+            {core.ws.ui.modal == 'examples' && <Examples />}
+            <div
+              className="absolute top-2 right-2 h-4 w-4 cursor-pointer"
+              onClick={() => closeModal(core)}
+            >
+              <FaIcon icon={faXmark} />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
+}
+
+const modalWidths = {
+  share: 400,
+  privacy: 600,
+  diagram: 400,
+  reference: 400,
+  examples: 400,
 }

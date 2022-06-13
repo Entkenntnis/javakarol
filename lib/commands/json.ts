@@ -27,7 +27,7 @@ export function deserialize(core: Core, file?: string) {
     if (tabs) {
       code = tabs[0]
     }
-    // minimal sanity check
+    /*// minimal sanity check
     if (!world.dimX || !world.dimY || !world.height) {
       throw new Error('Welt beschädigt')
     }
@@ -46,10 +46,10 @@ export function deserialize(core: Core, file?: string) {
           throw new Error('Welt enthält ungültigen Wert')
         }
       }
-    }
+    }*/
     abort(core)
     core.mutateWs((state) => {
-      state.world = world
+      //state.world = world
       if (state.type == 'free') {
         state.code = code ?? ''
         state.ui.preview = undefined
@@ -57,7 +57,7 @@ export function deserialize(core: Core, file?: string) {
       state.ui.needsTextRefresh = true
     })
     core.mutateCore((state) => {
-      state.projectInitialWorld = world
+      //state.projectInitialWorld = world
     })
   } catch (e) {
     alert(e ?? 'Laden fehlgeschlagen')
