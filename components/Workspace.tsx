@@ -110,9 +110,9 @@ export function Workspace() {
         </div>
         <div className="bg-white flex border-t h-[40px] flex-shrink-0">
           <div className="w-full overflow-auto my-auto flex justify-between">
-            <div className="ml-3 my-1">
+            <div className="ml-1 my-1">
               <button
-                className="hover:underline"
+                className="hover:bg-gray-100 rounded px-2"
                 onClick={() => {
                   openModal(core, 'diagram')
                 }}
@@ -124,32 +124,33 @@ export function Workspace() {
                 />{' '}
                 Klassendiagramm
               </button>
-              <span className="border-l border-gray-300 mx-3"></span>
-              <FaIcon
-                icon={faBook}
-                className="text-xs"
-                style={{ verticalAlign: 0 }}
-              />{' '}
+              <span className="border-l border-gray-300 mx-1"></span>
+
               <button
-                className="hover:underline"
+                className="hover:bg-gray-100 rounded px-2"
                 onClick={() => {
                   openModal(core, 'reference')
                 }}
               >
+                <FaIcon
+                  icon={faBook}
+                  className="text-xs"
+                  style={{ verticalAlign: 0 }}
+                />{' '}
                 API-Referenz
               </button>
-              <span className="border-l border-gray-300 mx-3"></span>
-              <FaIcon
-                icon={faCode}
-                className="text-xs"
-                style={{ verticalAlign: 0 }}
-              />{' '}
+              <span className="border-l border-gray-300 mx-1"></span>
               <button
-                className="hover:underline"
+                className="hover:bg-gray-100 rounded px-2"
                 onClick={() => {
                   openModal(core, 'examples')
                 }}
               >
+                <FaIcon
+                  icon={faCode}
+                  className="text-xs"
+                  style={{ verticalAlign: 0 }}
+                />{' '}
                 Beispiele
               </button>
               <span className="border-l border-gray-300 mx-3"></span>
@@ -168,7 +169,7 @@ export function Workspace() {
               </button>
               <span className="border-l border-gray-300 mx-3"></span>
             </div>
-            <div className="mr-3 my-1">
+            <div className="mr-1 my-1">
               <span className="border-l border-gray-300 mx-3"></span>
               <a
                 className="hover:underline text-blue-600"
@@ -183,9 +184,9 @@ export function Workspace() {
                   style={{ verticalAlign: 0 }}
                 />
               </a>
-              <span className="border-l border-gray-300 mx-3"></span>
+              <span className="border-l border-gray-300 mx-3 mr-1"></span>
               <button
-                className="hover:underline"
+                className="hover:bg-gray-100 rounded px-2"
                 onClick={() => {
                   openModal(core, 'privacy')
                 }}
@@ -195,41 +196,41 @@ export function Workspace() {
             </div>
           </div>
         </div>
-      </div>
-      {core.ws.ui.modal !== 'none' && (
-        <div
-          className={clsx(
-            'fixed inset-0 bg-gray-300 bg-opacity-30 flex justify-around',
-            'items-center z-[200]'
-          )}
-          onClick={() => {
-            closeModal(core)
-          }}
-        >
+        {core.ws.ui.modal !== 'none' && (
           <div
-            onClick={(e) => {
-              e.stopPropagation()
-            }}
             className={clsx(
-              'fixed mx-auto bg-white opacity-100 rounded z-[300] ',
-              'mb-[20vh]'
+              'absolute inset-0 bg-gray-300 bg-opacity-30 flex justify-around',
+              'items-center z-[200]'
             )}
-            style={{ width: modalWidths[core.ws.ui.modal] }}
+            onClick={() => {
+              closeModal(core)
+            }}
           >
-            {core.ws.ui.modal == 'share' && <Share />}
-            {core.ws.ui.modal == 'privacy' && <Privacy />}
-            {core.ws.ui.modal == 'diagram' && <Diagram />}
-            {core.ws.ui.modal == 'reference' && <Reference />}
-            {core.ws.ui.modal == 'examples' && <Examples />}
             <div
-              className="absolute top-2 right-2 h-4 w-4 cursor-pointer"
-              onClick={() => closeModal(core)}
+              onClick={(e) => {
+                e.stopPropagation()
+              }}
+              className={clsx(
+                'absolute mx-auto bg-white opacity-100 rounded z-[300] ',
+                'mb-[15vh] max-h-[75vh] overflow-auto'
+              )}
+              style={{ width: modalWidths[core.ws.ui.modal] }}
             >
-              <FaIcon icon={faXmark} />
+              {core.ws.ui.modal == 'share' && <Share />}
+              {core.ws.ui.modal == 'privacy' && <Privacy />}
+              {core.ws.ui.modal == 'diagram' && <Diagram />}
+              {core.ws.ui.modal == 'reference' && <Reference />}
+              {core.ws.ui.modal == 'examples' && <Examples />}
+              <div
+                className="absolute top-2 right-2 h-4 w-4 cursor-pointer"
+                onClick={() => closeModal(core)}
+              >
+                <FaIcon icon={faXmark} />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </>
   )
 }
@@ -237,7 +238,7 @@ export function Workspace() {
 const modalWidths = {
   share: 400,
   privacy: 600,
-  diagram: 400,
-  reference: 400,
-  examples: 400,
+  diagram: 800,
+  reference: 800,
+  examples: 800,
 }
