@@ -9,6 +9,7 @@ import {
   faRightLong,
   faShare,
   faSpinner,
+  faTrashCan,
   faUpLong,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
@@ -178,7 +179,7 @@ export function Player() {
                   resetOutput(core)
                 }}
               >
-                <FaIcon icon={faXmark} />
+                <FaIcon icon={faTrashCan} /> Ausgabe löschen
               </button>
             )}
           </div>

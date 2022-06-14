@@ -9,6 +9,8 @@ import {
 } from '../commands/world'
 import { Core } from '../state/core'
 
+const execSpeed = 100
+
 interface ApiMethod {
   invoke: (stack: any[], core: Core) => Promise<void>
 }
@@ -18,7 +20,7 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
     invoke: async (stack, core) => {
       createWorldCmd(core, 5, 5, 6)
       stack.push('placeholder_Welt')
-      await sleep(300)
+      await sleep(execSpeed)
     },
   },
   Welt_constructor_int_int: {
@@ -27,7 +29,7 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
       const x = stack.pop()
       createWorldCmd(core, x, y, 6)
       stack.push('placeholder_Welt')
-      await sleep(300)
+      await sleep(execSpeed)
     },
   },
   Welt_constructor_int_int_int: {
@@ -37,20 +39,20 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
       const x = stack.pop()
       createWorldCmd(core, x, y, h)
       stack.push('placeholder_Welt')
-      await sleep(300)
+      await sleep(execSpeed)
     },
   },
   Roboter_constructor_Welt: {
     invoke: async (stack, core) => {
       stack.push('placeholder_Roboter')
       stack.pop()
-      await sleep(300)
+      await sleep(execSpeed)
     },
   },
   Roboter_Hinlegen: {
     invoke: async (stack, core) => {
       brick(core)
-      await sleep(300)
+      await sleep(execSpeed)
     },
   },
   Roboter_Hinlegen_int: {
@@ -58,14 +60,14 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
       const val = stack.pop()
       for (let i = 0; i < val; i++) {
         brick(core)
-        await sleep(300)
+        await sleep(execSpeed)
       }
     },
   },
   Roboter_Schritt: {
     invoke: async (stack, core) => {
       forward(core)
-      await sleep(300)
+      await sleep(execSpeed)
     },
   },
   Roboter_Schritt_int: {
@@ -73,14 +75,14 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
       const val = stack.pop()
       for (let i = 0; i < val; i++) {
         forward(core)
-        await sleep(300)
+        await sleep(execSpeed)
       }
     },
   },
   Roboter_LinksDrehen: {
     invoke: async (stack, core) => {
       left(core)
-      await sleep(300)
+      await sleep(execSpeed)
     },
   },
   Roboter_LinksDrehen_int: {
@@ -88,14 +90,14 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
       const val = stack.pop()
       for (let i = 0; i < val; i++) {
         left(core)
-        await sleep(300)
+        await sleep(execSpeed)
       }
     },
   },
   Roboter_RechtsDrehen: {
     invoke: async (stack, core) => {
       right(core)
-      await sleep(300)
+      await sleep(execSpeed)
     },
   },
   Roboter_RechtsDrehen_int: {
@@ -103,20 +105,20 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
       const val = stack.pop()
       for (let i = 0; i < val; i++) {
         right(core)
-        await sleep(300)
+        await sleep(execSpeed)
       }
     },
   },
   Roboter_MarkeSetzen: {
     invoke: async (stack, core) => {
       setMark(core)
-      await sleep(300)
+      await sleep(execSpeed)
     },
   },
   Roboter_MarkeLoeschen: {
     invoke: async (stack, core) => {
       resetMark(core)
-      await sleep(300)
+      await sleep(execSpeed)
     },
   },
 }

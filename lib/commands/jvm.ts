@@ -28,6 +28,7 @@ export function runProgram(core: Core) {
         core.mutateWs((ws) => {
           ws.ui.state = 'ready'
         })
+        addMessage(core, 'Ausführung beendet.')
       })
       .finally(() => abort(core))
   }

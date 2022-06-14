@@ -199,7 +199,7 @@ export function Workspace() {
         {core.ws.ui.modal !== 'none' && (
           <div
             className={clsx(
-              'absolute inset-0 bg-gray-300 bg-opacity-30 flex justify-around',
+              'absolute inset-0 bg-gray-600 bg-opacity-30 flex justify-around',
               'items-center z-[200]'
             )}
             onClick={() => {
@@ -211,8 +211,9 @@ export function Workspace() {
                 e.stopPropagation()
               }}
               className={clsx(
-                'absolute mx-auto bg-white opacity-100 rounded z-[300] ',
-                'mb-[15vh] max-h-[75vh] overflow-auto'
+                core.ws.ui.modal == 'share' || core.ws.ui.modal == 'privacy'
+                  ? 'absolute mx-auto bg-white opacity-100 rounded z-[300] mb-[15vh] max-h-[75vh] overflow-auto'
+                  : 'absolute top-6 inset-x-10 bottom-16 bg-white rounded overflow-auto'
               )}
               style={{ width: modalWidths[core.ws.ui.modal] }}
             >
@@ -222,10 +223,10 @@ export function Workspace() {
               {core.ws.ui.modal == 'reference' && <Reference />}
               {core.ws.ui.modal == 'examples' && <Examples />}
               <div
-                className="absolute top-2 right-2 h-4 w-4 cursor-pointer"
+                className="absolute top-2 right-2  cursor-pointer hover:bg-gray-100 px-2 py-0.5 rounded"
                 onClick={() => closeModal(core)}
               >
-                <FaIcon icon={faXmark} />
+                <FaIcon icon={faXmark} /> Schließen
               </div>
             </div>
           </div>
@@ -238,7 +239,7 @@ export function Workspace() {
 const modalWidths = {
   share: 400,
   privacy: 600,
-  diagram: 800,
-  reference: 800,
-  examples: 800,
+  diagram: '',
+  reference: '',
+  examples: '',
 }
