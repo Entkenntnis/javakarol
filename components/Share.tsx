@@ -1,5 +1,6 @@
 import { faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { useState } from 'react'
+
 import { closeModal } from '../lib/commands/modal'
 import { share } from '../lib/commands/share'
 import { useCore } from '../lib/state/core'

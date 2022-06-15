@@ -1,8 +1,7 @@
-// Takes a syntax tree and outputs a class file
-
 import { Diagnostic } from '@codemirror/lint'
 import { Text } from '@codemirror/state'
 import { Tree, SyntaxNodeRef } from '@lezer/common'
+
 import { javaKarolApi } from './api'
 
 export interface ClassFile {
@@ -14,6 +13,7 @@ type Instruction =
   | StoreInstruction
   | ApiInstruction
   | ConstantInstruction
+  | PopInstruction
 
 interface LoadInstruction {
   type: 'load-from-frame'
@@ -36,6 +36,11 @@ interface ApiInstruction {
 interface ConstantInstruction {
   type: 'push-constant'
   val: any
+  line: number
+}
+
+interface PopInstruction {
+  type: 'pop-from-stack'
   line: number
 }
 
@@ -62,9 +67,9 @@ interface ObjectArgument {
   id: string
 }
 
-type ArgumentList = (IntArgument | StringArgument | ObjectArgument)[]
+type ArgumentList = FrameEntry[]
 
-type FrameEntry = ObjectEntry
+type FrameEntry = ObjectEntry | IntEntry | StringEntry | NeverEntry
 
 class Frame {
   data: { [key: string]: FrameEntry }
@@ -87,8 +92,20 @@ class Frame {
 }
 
 interface ObjectEntry {
-  type: 'object'
+  type: 'Object'
   class: string
+}
+
+interface IntEntry {
+  type: 'int'
+}
+
+interface StringEntry {
+  type: 'String'
+}
+
+interface NeverEntry {
+  type: 'never' // if something fails
 }
 
 export class Compiler {
@@ -128,21 +145,17 @@ export class Compiler {
       if (type == '{' || type == '}' || type == ';') continue
       if (type.includes('Comment')) continue
       if (type == 'LocalVariableDeclaration') {
-        let type = ''
+        let declType = ''
         let id = ''
-        let args: ArgumentList = []
+        let variableDeclarator: SyntaxNodeRef = cursor
         this.ensure(cursor, [
-          {
-            type: 'TypeName',
-            count: 1,
-            check: (n) => {
-              type = this.ctoc(n)
-              return true
-            },
-          },
           {
             type: 'VariableDeclarator',
             count: 1,
+            check: (n) => {
+              variableDeclarator = n
+              return true
+            },
             children: [
               {
                 type: 'Definition',
@@ -153,166 +166,200 @@ export class Compiler {
                 },
               },
               { type: 'AssignOp', count: 1 },
-              {
-                type: 'ObjectCreationExpression',
-                count: 1,
-                children: [
-                  { type: 'new', count: 1 },
-                  {
-                    type: 'TypeName',
-                    count: 1,
-                    check: (n) => {
-                      const val = this.ctoc(n)
-                      if (val !== type) {
-                        this.addWarning(`Typfehler, erwarte "${type}"`, n)
-                      }
-                      return val == type
-                    },
-                  },
-                  {
-                    type: 'ArgumentList',
-                    count: 1,
-                    check: (n) => {
-                      args = this.parseArguments(n, frame)
-                      return true
-                    },
-                  },
-                ],
-              },
             ],
           },
         ])
-        const argStr = args
-          .map((arg) => {
-            if (arg.type == 'Object') {
-              return arg.class
+        if (cursor.node.getChild('TypeName')) {
+          declType = this.ctoc(cursor.node.getChild('TypeName')!)
+        } else if (cursor.node.getChild('PrimitiveType')) {
+          declType = this.ctoc(cursor.node.getChild('PrimitiveType')!)
+        }
+        if (variableDeclarator.node.lastChild) {
+          const line = this.doc.lineAt(cursor.from).number
+          const entry = this.compileExpression(
+            variableDeclarator.node.lastChild,
+            frame
+          )
+          if (entry.type !== 'never') {
+            const entryType = entry.type == 'Object' ? entry.class : entry.type
+            if (entryType !== declType) {
+              this.addWarning(
+                `Typfehler, erwarte ${declType} statt ${entryType}`,
+                cursor
+              )
             }
-            return arg.type
+          }
+          frame.store(id, entry)
+          this.classFile.bytecode.push({
+            type: 'store-to-frame',
+            identifier: id,
+            line,
           })
-          .join('_')
-        const line = this.doc.lineAt(cursor.from).number
-        args.forEach((arg) => {
+        }
+      } else if (type == 'ExpressionStatement') {
+        const subcursor = cursor.node.cursor()
+        if (subcursor.firstChild()) {
+          if (subcursor.type.name !== ';') {
+            const entry = this.compileExpression(subcursor, frame)
+            const line = this.doc.lineAt(subcursor.from).number
+            if (entry.type !== 'never') {
+              this.classFile.bytecode.push({ type: 'pop-from-stack', line }) // ignore value
+            }
+          }
+        }
+      } else {
+        this.addWarning(`Unbekannter Ausdruck "${type}"`, cursor)
+      }
+    } while (cursor.nextSibling())
+  }
+
+  compileExpression(node: SyntaxNodeRef, frame: Frame): FrameEntry {
+    const line = this.doc.lineAt(node.from).number
+    if (node.type.name == 'IntegerLiteral') {
+      this.classFile.bytecode.push({
+        type: 'push-constant',
+        val: parseInt(this.ctoc(node)),
+        line,
+      })
+      return { type: 'int' }
+    }
+    if (node.type.name == 'StringLiteral') {
+      this.classFile.bytecode.push({
+        type: 'push-constant',
+        val: this.ctoc(node),
+        line,
+      })
+      return { type: 'String' }
+    }
+    if (node.type.name == 'Identifier') {
+      const id = this.ctoc(node)
+      const frameEntry = frame.load(id)
+      if (!frameEntry) {
+        this.addWarning(`Unbekannte Variable ${id}`, node)
+        return { type: 'never' }
+      }
+      this.classFile.bytecode.push({
+        type: 'load-from-frame',
+        identifier: id,
+        line,
+      })
+      return frameEntry
+    }
+    if (node.type.name == 'ObjectCreationExpression') {
+      let argListNode = node
+      let classType = ''
+      this.ensure(node, [
+        { type: 'new', count: 1 },
+        {
+          type: 'TypeName',
+          count: 1,
+          check: (n) => {
+            classType = this.ctoc(n)
+            return true
+          },
+        },
+        {
+          type: 'ArgumentList',
+          count: 1,
+          check: (n) => {
+            argListNode = n //this.parseArguments(n, frame)
+            return true
+          },
+        },
+      ])
+      const argList = this.parseArguments(argListNode, frame)
+      const argStr = argList
+        .map((arg) => {
           if (arg.type == 'Object') {
-            this.classFile.bytecode.push({
-              type: 'load-from-frame',
-              identifier: arg.id,
-              line,
-            })
+            return arg.class
           }
-          if (arg.type == 'int') {
-            this.classFile.bytecode.push({
-              type: 'push-constant',
-              val: arg.val,
-              line,
-            })
-          }
+          return arg.type
         })
-        const identifier = `${type}_constructor${argStr && `_${argStr}`}`
+        .join('_')
+      const identifier = `${classType}_constructor${argStr && `_${argStr}`}`
+      if (javaKarolApi[identifier]) {
+        this.classFile.bytecode.push({
+          type: 'invoke-api-method',
+          identifier,
+          line,
+        })
+      } else {
+        this.addWarning('Funktion nicht gefunden', node)
+      }
+      return { type: 'Object', class: classType }
+    }
+    if (node.type.name == 'MethodInvocation') {
+      let object = ''
+      let methodName = ''
+      let argListNode = node
+      this.ensure(node, [
+        {
+          type: 'Identifier',
+          count: 1,
+          check: (n) => {
+            object = this.ctoc(n)
+            return true
+          },
+        },
+        {
+          type: 'MethodName',
+          count: 1,
+          children: [
+            {
+              type: 'Identifier',
+              count: 1,
+              check: (n) => {
+                methodName = this.ctoc(n)
+                return true
+              },
+            },
+          ],
+        },
+        {
+          type: 'ArgumentList',
+          count: 1,
+          check: (n) => {
+            argListNode = n
+            return true
+          },
+        },
+      ])
+      const argList = this.parseArguments(argListNode, frame)
+      const argStr = argList
+        .map((arg) => {
+          if (arg.type == 'Object') {
+            return arg.class
+          }
+          return arg.type
+        })
+        .join('_')
+
+      const entry = frame.load(object) // future: static methods are not nicely handled yet
+      if (entry && entry.type == 'Object') {
+        const identifier = `${entry.class}_${methodName}${
+          argStr && `_${argStr}`
+        }`
         if (javaKarolApi[identifier]) {
+          this.classFile.bytecode.push({
+            type: 'load-from-frame',
+            identifier: object,
+            line,
+          })
           this.classFile.bytecode.push({
             type: 'invoke-api-method',
             identifier,
             line,
           })
         } else {
-          this.addWarning('Funktion nicht gefunden', cursor)
-        }
-        frame.store(id, { type: 'object', class: type })
-        this.classFile.bytecode.push({
-          type: 'store-to-frame',
-          identifier: id,
-          line,
-        })
-      } else if (type == 'ExpressionStatement') {
-        //this.debug(cursor)
-        let object = ''
-        let methodName = ''
-        let args: ArgumentList = []
-        this.ensure(cursor, [
-          {
-            type: 'MethodInvocation',
-            count: 1,
-            children: [
-              {
-                type: 'Identifier',
-                count: 1,
-                check: (n) => {
-                  object = this.ctoc(n)
-                  return true
-                },
-              },
-              {
-                type: 'MethodName',
-                count: 1,
-                children: [
-                  {
-                    type: 'Identifier',
-                    count: 1,
-                    check: (n) => {
-                      methodName = this.ctoc(n)
-                      return true
-                    },
-                  },
-                ],
-              },
-              {
-                type: 'ArgumentList',
-                count: 1,
-                check: (n) => {
-                  args = this.parseArguments(n, frame)
-                  return true
-                },
-              },
-            ],
-          },
-        ])
-        const argStr = args
-          .map((arg) => {
-            if (arg.type == 'Object') {
-              return arg.class
-            }
-            return arg.type
-          })
-          .join('_')
-
-        const line = this.doc.lineAt(cursor.from).number
-        args.forEach((arg) => {
-          if (arg.type == 'Object') {
-            this.classFile.bytecode.push({
-              type: 'load-from-frame',
-              identifier: arg.id,
-              line,
-            })
-          }
-          if (arg.type == 'int') {
-            this.classFile.bytecode.push({
-              type: 'push-constant',
-              val: arg.val,
-              line,
-            })
-          }
-        })
-        const entry = frame.load(object)
-        if (entry && entry.type == 'object') {
-          const identifier = `${entry.class}_${methodName}${
-            argStr && `_${argStr}`
-          }`
-          if (javaKarolApi[identifier]) {
-            this.classFile.bytecode.push({
-              type: 'invoke-api-method',
-              identifier,
-              line,
-            })
-          } else {
-            this.addWarning('Funktion nicht gefunden', cursor)
-          }
-        } else {
-          this.addWarning('Variable nicht gefunden', cursor)
+          this.addWarning('Funktion nicht gefunden', node)
         }
       } else {
-        this.addWarning(`Unbekannter Ausdruck "${type}"`, cursor)
+        this.addWarning('Variable nicht gefunden', node)
       }
-    } while (cursor.nextSibling())
+      return { type: 'never' }
+    }
+    this.addWarning(`Unbekannter Ausdruck ${node.type.name}`, node)
+    return { type: 'never' }
   }
 
   parseArguments(node: SyntaxNodeRef, frame: Frame): ArgumentList {
@@ -323,19 +370,7 @@ export class Compiler {
       do {
         const t = cursor.type.name
         if (t == '(' || t == ')' || t == ',') continue
-        if (t == 'Identifier') {
-          const id = this.ctoc(cursor)
-          const entry = frame.load(id)
-          if (!entry) {
-            this.addWarning(`Unbekannte Variable "${id}"`, cursor)
-          } else {
-            args.push({ type: 'Object', class: entry.class, id }) // TODO: hier kann auch ein anderer Typ als Object sein
-          }
-        } else if (t == 'IntegerLiteral') {
-          args.push({ type: 'int', val: parseInt(this.ctoc(cursor)) })
-        } else {
-          this.addWarning(`Unbekanntes Argument "${t}"`, cursor)
-        }
+        args.push(this.compileExpression(cursor, frame))
       } while (cursor.nextSibling())
     }
 

@@ -1,15 +1,12 @@
 import { Core } from '../state/core'
 import { createWorld } from '../state/create'
 import { Heading, World } from '../state/types'
-import { submit_event } from '../stats/submit'
 import { addMessage } from './messages'
 
-const readOnlyMessage = 'Deine Aufgabe ist abgeschlossen.'
-
-export function forward(core: Core, opts?: { reverse: boolean }) {
+export function forward(core: Core) {
   const { world } = core.ws
   const { karol, bricks } = world
-  const dir = opts?.reverse ? reverse(karol.dir) : karol.dir
+  const { dir } = karol
   const target = move(karol.x, karol.y, dir, world)
 
   if (!target) {
@@ -20,7 +17,7 @@ export function forward(core: Core, opts?: { reverse: boolean }) {
   const currentBrickCount = bricks[karol.y][karol.x]
   const targetBrickCount = bricks[target.y][target.x]
 
-  if (Math.abs(currentBrickCount - targetBrickCount) > 1) {
+  if (Math.abs(currentBrickCount - targetBrickCount) > 1 /* constant ... */) {
     addMessage(core, 'Karol kann diese Höhe nicht überwinden.')
     return false
   }
@@ -59,15 +56,9 @@ export function brick(core: Core) {
     return false
   }
 
-  if (isReadOnly(core, pos.x, pos.y)) {
-    addMessage(core, readOnlyMessage)
-    return false
-  }
-
   core.mutateWs((state) => {
     state.world.bricks[pos.y][pos.x] = world.bricks[pos.y][pos.x] + 1
   })
-  onWorldChange(core)
   return true
 }
 
@@ -86,31 +77,9 @@ export function unbrick(core: Core) {
     return false
   }
 
-  if (isReadOnly(core, pos.x, pos.y)) {
-    addMessage(core, readOnlyMessage)
-    return false
-  }
-
   core.mutateWs((state) => {
     state.world.bricks[pos.y][pos.x] = world.bricks[pos.y][pos.x] - 1
   })
-  onWorldChange(core)
-  return true
-}
-
-export function toggleMark(core: Core) {
-  const karol = core.ws.world.karol
-
-  if (isReadOnly(core, karol.x, karol.y)) {
-    addMessage(core, readOnlyMessage)
-    return false
-  }
-
-  core.mutateWs(({ world }) => {
-    world.marks[world.karol.y][world.karol.x] =
-      !world.marks[world.karol.y][world.karol.x]
-  })
-  onWorldChange(core)
   return true
 }
 
@@ -118,15 +87,9 @@ export function setMark(core: Core) {
   const { world } = core.ws
   const karol = world.karol
 
-  if (isReadOnly(core, karol.x, karol.y)) {
-    addMessage(core, readOnlyMessage)
-    return false
-  }
-
   core.mutateWs(({ world }) => {
     world.marks[world.karol.y][world.karol.x] = true
   })
-  onWorldChange(core)
   return true
 }
 
@@ -134,15 +97,9 @@ export function resetMark(core: Core) {
   const { world } = core.ws
   const karol = world.karol
 
-  if (isReadOnly(core, karol.x, karol.y)) {
-    addMessage(core, readOnlyMessage)
-    return false
-  }
-
   core.mutateWs(({ world }) => {
     world.marks[world.karol.y][world.karol.x] = false
   })
-  onWorldChange(core)
   return true
 }
 
@@ -156,16 +113,10 @@ export function toggleBlock(core: Core) {
     return false
   }
 
-  if (isReadOnly(core, pos.x, pos.y)) {
-    addMessage(core, readOnlyMessage)
-    return false
-  }
-
   if (blocks[pos.y][pos.x]) {
     core.mutateWs(({ world }) => {
       world.blocks[pos.y][pos.x] = false
     })
-    onWorldChange(core)
     return true
   } else {
     if (bricks[pos.y][pos.x] > 0) {
@@ -179,39 +130,8 @@ export function toggleBlock(core: Core) {
     core.mutateWs(({ world }) => {
       world.blocks[pos.y][pos.x] = true
     })
-    onWorldChange(core)
     return true
   }
-}
-
-export function createWorldCmd(
-  core: Core,
-  x: number,
-  y: number,
-  z: number,
-  keep?: boolean
-) {
-  const previous = core.ws.world
-  core.mutateWs((state) => {
-    state.world = createWorld(x, y, z)
-    state.ui.preview = undefined
-    // copy existing state
-    if (keep) {
-      for (let x2 = 0; x2 < x; x2++) {
-        for (let y2 = 0; y2 < y; y2++) {
-          if (x2 < previous.dimX && y2 < previous.dimY) {
-            state.world.marks[y2][x2] = previous.marks[y2][x2]
-            state.world.bricks[y2][x2] = previous.bricks[y2][x2]
-            state.world.blocks[y2][x2] = previous.blocks[y2][x2]
-          }
-        }
-      }
-      state.world.karol = previous.karol
-    }
-    if (keep !== undefined) {
-      state.ui.keepWorldPreference = keep
-    }
-  })
 }
 
 export function move(x: number, y: number, dir: Heading, world: World) {
@@ -268,65 +188,8 @@ export function turnRight(h: Heading) {
   }[h] as Heading
 }
 
-function isReadOnly(core: Core, x: number, y: number) {
-  return core.ws.type == 'puzzle' && core.ws.progress == 100
-}
-
-export function onWorldChange(core: Core) {
-  if (core.ws.type == 'puzzle') {
-    let correctFields = 0
-    let nonEmptyFields = 0
-    for (let x = 0; x < core.puzzle.targetWorld.dimX; x++) {
-      for (let y = 0; y < core.puzzle.targetWorld.dimY; y++) {
-        if (core.puzzle.targetWorld.bricks[y][x] > 0) {
-          nonEmptyFields++
-          if (
-            core.ws.world.bricks[y][x] == core.puzzle.targetWorld.bricks[y][x]
-          ) {
-            correctFields++
-          }
-        } else {
-          if (
-            core.ws.world.bricks[y][x] !== core.puzzle.targetWorld.bricks[y][x]
-          ) {
-            correctFields--
-          }
-        }
-        if (core.puzzle.targetWorld.marks[y][x]) {
-          nonEmptyFields++
-          if (core.ws.world.marks[y][x]) {
-            correctFields++
-          }
-        } else {
-          if (core.ws.world.marks[y][x]) {
-            correctFields--
-          }
-        }
-      }
-    }
-    const progress = Math.round(
-      (Math.max(0, correctFields) / nonEmptyFields) * 100
-    )
-
-    core.mutateWs((ws) => {
-      if (ws.type == 'puzzle') {
-        ws.progress = progress
-        if (progress == 100) {
-          ws.ui.showPreview = false
-        }
-      }
-    })
-
-    const id = core.ws.id
-    if (progress == 100 && !core.state.done.includes(id)) {
-      core.mutateCore((state) => {
-        state.done.push(id)
-      })
-      submit_event(`${id}_done`, core)
-    }
-
-    if (progress == 100) {
-      core.deleteWsFromStorage(id)
-    }
-  }
+export function createWorldCmd(core: Core, x: number, y: number, z: number) {
+  core.mutateWs((state) => {
+    state.world = createWorld(x, y, z)
+  })
 }

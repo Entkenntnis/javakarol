@@ -10,12 +10,7 @@ export function addMessage(core: Core, text: string) {
     if (lastIndex >= 0 && ui.messages[lastIndex].text == text) {
       ui.messages[lastIndex].count++
     } else {
-      ui.messages.push({ text, ts, count: 1 })
+      ui.messages.push({ text, count: 1, ts })
     }
   })
-  /*setTimeout(() => {
-    core.mutateWs(({ ui }) => {
-      ui.messages = ui.messages.filter((m) => m.ts != ts)
-    })
-  }, 3500)*/
 }

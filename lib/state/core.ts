@@ -10,7 +10,7 @@ import {
 } from 'react'
 import produce, { Draft } from 'immer'
 
-import { CoreRefs, CoreState, Puzzle, WorkspaceState, World } from './types'
+import { CoreRefs, CoreState, WorkspaceState } from './types'
 import { createDefaultCoreState } from './create'
 import { JavaVM } from '../java/vm'
 
@@ -40,9 +40,7 @@ export const CoreProvider = CoreContext.Provider
 export class Core {
   _setCoreState: Dispatch<SetStateAction<CoreState>>
   _coreRef: MutableRefObject<CoreRefs>
-  _workspaceStorage: { [key: string]: { world: World; code: string } }
 
-  userId: string
   jvm?: JavaVM
 
   constructor(
@@ -51,8 +49,6 @@ export class Core {
   ) {
     this._setCoreState = setCoreState
     this._coreRef = coreRef
-    this._workspaceStorage = {}
-    this.userId = Math.random().toString()
   }
 
   // async-safe way to access core state
@@ -61,11 +57,7 @@ export class Core {
   }
 
   get ws() {
-    return this.state.puzzleWorkspace || this.state.editorWorkspace
-  }
-
-  get puzzle(): Puzzle {
-    throw 'deprecated'
+    return this.state.workSpace
   }
 
   // always mutate core state with this function
@@ -78,19 +70,7 @@ export class Core {
   // proxy call to core, workspace aware
   mutateWs(updater: (draft: Draft<WorkspaceState>) => void) {
     this.mutateCore((state) => {
-      updater(state.puzzleWorkspace || state.editorWorkspace)
+      updater(state.workSpace)
     })
-  }
-
-  retrieveWsFromStorage(id: number) {
-    return this._workspaceStorage[id.toString()]
-  }
-
-  setWsToStorage(id: number, world: World, code: string) {
-    this._workspaceStorage[id.toString()] = { world, code }
-  }
-
-  deleteWsFromStorage(id: number) {
-    delete this._workspaceStorage[id.toString()]
   }
 }

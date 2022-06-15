@@ -1,31 +1,12 @@
-import {
-  CoreState,
-  WorkspaceState,
-  WorkspaceStateBase,
-  WorkspaceStateFreeMode,
-  World,
-} from './types'
+import { CoreState, WorkspaceState, World } from './types'
 
 export function createDefaultCoreState(): CoreState {
   return {
-    showMenu: false,
-    enableStats: true,
-    editorWorkspace: createFreeModeWorkspaceState(),
-    inviteMenu: true,
-    inviteStart: true,
-    done: [],
+    workSpace: createWorkspace(),
   }
 }
 
-export function createFreeModeWorkspaceState(): WorkspaceStateFreeMode {
-  const ws: WorkspaceState = {
-    ...createBaseWorkspace(),
-    type: 'free',
-  }
-  return ws
-}
-
-function createBaseWorkspace(): WorkspaceStateBase {
+function createWorkspace(): WorkspaceState {
   return {
     world: createWorld(0, 0, 0),
     code: `
@@ -45,27 +26,11 @@ public class Programm {
       gutter: 0,
       gutterReturns: [],
       state: 'loading',
-      wireframe: false,
       needsTextRefresh: false,
-      preview: undefined,
-      showPreview: true,
-      shouldFocusWrapper: false,
-      hideKarol: false,
-      keepWorldPreference: false,
       errorMessages: [],
       modal: 'none',
     },
-    vm: {
-      pc: 0,
-      frames: [{}],
-      callstack: [],
-      needsConfirmation: false,
-      confirmation: false,
-    },
     jvm: {},
-    settings: {
-      speed: 'fast',
-    },
   }
 }
 
