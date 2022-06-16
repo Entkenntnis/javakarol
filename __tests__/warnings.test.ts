@@ -221,6 +221,26 @@ test('No redeclaration of variable', () => {
   `)
 })
 
+test('No continue outside of loop', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void main(Welt[] args) {
+      continue;
+    }
+  }
+  `)
+})
+
+test('No break outside of loop', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void main(Welt[] args) {
+      break;
+    }
+  }
+  `)
+})
+
 function shouldNotCompile(program: string) {
   const doc = Text.of(program.split('\n'))
   const tree = parser.parse(doc.sliceString(0))

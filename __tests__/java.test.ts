@@ -509,6 +509,54 @@ test('Assignment in different blocks', async () => {
   )
 })
 
+test('Continue statement', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 0;
+      while (i < 4) {
+        i++;
+        karol.Schritt();
+        continue;
+        i++;
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(4)
+    }
+  )
+})
+
+test('Break statement', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      while (true) {
+        karol.Schritt();
+        karol.Schritt();
+        break;
+        karol.Schritt();
+        karol.Schritt();
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(2)
+    }
+  )
+})
+
 async function testProgram(program: String, check: (world: World) => void) {
   const doc = Text.of(program.split('\n'))
   const tree = parser.parse(doc.sliceString(0))

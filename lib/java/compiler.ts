@@ -147,9 +147,12 @@ export type FrameEntry =
 
 class Context {
   frame: Frame
+  continueTarget?: number
+  breakToComplete: JumpInstruction[]
 
   constructor() {
     this.frame = new Frame()
+    this.breakToComplete = []
   }
 
   pushFrame() {
@@ -242,6 +245,7 @@ export class Compiler {
     context.pushFrame()
     do {
       const type = cursor.type.name
+      const line = this.doc.lineAt(cursor.from).number
       if (type == '{' || type == '}' || type == ';') continue
       if (type.includes('Comment')) continue
       if (type == 'LocalVariableDeclaration') {
@@ -315,8 +319,8 @@ export class Compiler {
           }
         }
       } else if (type == 'WhileStatement') {
-        const line = this.doc.lineAt(cursor.from).number
         const currentPc = this.classFile.bytecode.length
+        context.continueTarget = currentPc
         const jumpInstr: JumpIfFalseInstruction = {
           type: 'jump-if-false',
           target: -1,
@@ -352,10 +356,37 @@ export class Compiler {
                 line: this.doc.lineAt(n.node.lastChild!.from).number,
               })
               jumpInstr.target = this.classFile.bytecode.length
+              context.continueTarget = undefined
+              context.breakToComplete.forEach((instr) => {
+                instr.target = jumpInstr.target
+              })
+              context.breakToComplete = []
               return true
             },
           },
         ])
+      } else if (type == 'ContinueStatement') {
+        if (context.continueTarget) {
+          this.classFile.bytecode.push({
+            type: 'jump',
+            target: context.continueTarget,
+            line,
+          })
+        } else {
+          this.addWarning('Continue ohne Schleife', cursor)
+        }
+      } else if (type == 'BreakStatement') {
+        if (context.continueTarget) {
+          const jumpInstr: JumpInstruction = {
+            type: 'jump',
+            target: -1,
+            line,
+          }
+          this.classFile.bytecode.push(jumpInstr)
+          context.breakToComplete.push(jumpInstr)
+        } else {
+          this.addWarning('Break ohne Schleife', cursor)
+        }
       } else {
         this.addWarning(`Unbekannter Ausdruck "${type}"`, cursor)
       }
