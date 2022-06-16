@@ -71,7 +71,7 @@ export class JavaVM {
         } catch (e) {}
       } else if (instr.type == 'push-constant') {
         this.stack.push(instr.val)
-      } else if (instr.type == 'pop-from-stack') {
+      } else if (instr.type == 'drop-from-stack') {
         this.stack.pop()
       } else if (instr.type == 'add') {
         const right = this.stack.pop()
@@ -104,12 +104,32 @@ export class JavaVM {
         const right = this.stack.pop()
         const left = this.stack.pop()
         this.stack.push(left < right)
+      } else if (instr.type == 'compare-less-eq') {
+        const right = this.stack.pop()
+        const left = this.stack.pop()
+        this.stack.push(left <= right)
+      } else if (instr.type == 'compare-greater-than') {
+        const right = this.stack.pop()
+        const left = this.stack.pop()
+        this.stack.push(left > right)
+      } else if (instr.type == 'compare-greater-eq') {
+        const right = this.stack.pop()
+        const left = this.stack.pop()
+        this.stack.push(left >= right)
       } else if (instr.type == 'invert-boolean') {
         const val = this.stack.pop()
         this.stack.push(!val)
       } else if (instr.type == 'negate-int') {
         const val = this.stack.pop()
         this.stack.push(-val)
+      } else if (instr.type == 'compare') {
+        const right = this.stack.pop()
+        const left = this.stack.pop()
+        this.stack.push(left === right)
+      } else if (instr.type == 'duplicate-stack-top') {
+        const val = this.stack.pop()
+        this.stack.push(val)
+        this.stack.push(val)
       }
 
       if (this.stopper) {

@@ -1,7 +1,6 @@
 import { Diagnostic } from '@codemirror/lint'
 import { Text } from '@codemirror/state'
 import { Tree, SyntaxNodeRef } from '@lezer/common'
-import { notEqual } from 'assert'
 
 import { javaKarolApi } from './api'
 
@@ -14,7 +13,7 @@ type Instruction =
   | StoreInstruction
   | ApiInstruction
   | ConstantInstruction
-  | PopInstruction
+  | DropInstruction
   | AddInstruction
   | SubtractInstruction
   | MultInstruction
@@ -22,8 +21,14 @@ type Instruction =
   | JumpIfFalseInstruction
   | JumpInstruction
   | CompLessInstruction
+  | CompLessEqInstruction
+  | CompGreaterInstruction
+  | CompGreaterEqInstruction
   | InvertInstruction
   | NegateInstruction
+  | CompareInstruction
+  | DuplicateInstruction
+  | DropInstruction
 
 interface LoadInstruction {
   type: 'load-from-frame'
@@ -49,8 +54,8 @@ interface ConstantInstruction {
   line: number
 }
 
-interface PopInstruction {
-  type: 'pop-from-stack'
+interface DropInstruction {
+  type: 'drop-from-stack'
   line: number
 }
 
@@ -90,6 +95,19 @@ interface CompLessInstruction {
   type: 'compare-less-than'
   line: number
 }
+interface CompLessEqInstruction {
+  type: 'compare-less-eq'
+  line: number
+}
+
+interface CompGreaterInstruction {
+  type: 'compare-greater-than'
+  line: number
+}
+interface CompGreaterEqInstruction {
+  type: 'compare-greater-eq'
+  line: number
+}
 
 interface InvertInstruction {
   type: 'invert-boolean'
@@ -98,6 +116,16 @@ interface InvertInstruction {
 
 interface NegateInstruction {
   type: 'negate-int'
+  line: number
+}
+
+interface CompareInstruction {
+  type: 'compare'
+  line: number
+}
+
+interface DuplicateInstruction {
+  type: 'duplicate-stack-top'
   line: number
 }
 
@@ -259,7 +287,7 @@ export class Compiler {
             const entry = this.compileExpression(subcursor, frame)
             const line = this.doc.lineAt(subcursor.from).number
             if (entry.type !== 'never') {
-              this.classFile.bytecode.push({ type: 'pop-from-stack', line }) // ignore value
+              this.classFile.bytecode.push({ type: 'drop-from-stack', line }) // ignore value
             }
           }
         }
@@ -350,6 +378,12 @@ export class Compiler {
         line,
       })
       return frameEntry
+    }
+    if (node.type.name == 'ParenthesizedExpression') {
+      const inner = node.node.firstChild!.nextSibling
+      if (inner) {
+        return this.compileExpression(inner, frame)
+      }
     }
     if (node.type.name == 'ObjectCreationExpression') {
       let argListNode = node
@@ -509,8 +543,6 @@ export class Compiler {
         }
       }
       if (node.node.getChild('CompareOp')) {
-        // TODO: move on here...
-
         const operator = this.ctoc(node.node.getChild('CompareOp')!)
         const left = node.node.firstChild
         const right = node.node.lastChild
@@ -522,15 +554,69 @@ export class Compiler {
               this.classFile.bytecode.push({ type: 'compare-less-than', line })
               return { type: 'boolean' }
             }
+            if (operator == '<=') {
+              this.classFile.bytecode.push({ type: 'compare-less-eq', line })
+              return { type: 'boolean' }
+            }
+            if (operator == '>') {
+              this.classFile.bytecode.push({
+                type: 'compare-greater-than',
+                line,
+              })
+              return { type: 'boolean' }
+            }
+            if (operator == '>=') {
+              this.classFile.bytecode.push({ type: 'compare-greater-eq', line })
+              return { type: 'boolean' }
+            }
+          }
+          if (operator == '==' && isEqualType(leftType, rightType)) {
+            this.classFile.bytecode.push({ type: 'compare', line })
+            return { type: 'boolean' }
+          }
+          if (operator == '!=' && isEqualType(leftType, rightType)) {
+            this.classFile.bytecode.push({ type: 'compare', line })
+            this.classFile.bytecode.push({ type: 'invert-boolean', line })
+            return { type: 'boolean' }
           }
           this.addWarning(
             'Unbekannter Operator oder nicht passende Typen',
             node
           )
           return { type: 'never' }
-        } else {
-          this.addWarning('Fehlende Werte in Operator', node)
-          return { type: 'never' }
+        }
+        this.addWarning('Fehlende Werte in Operator', node)
+        return { type: 'never' }
+      }
+      const logop = node.node.getChild('LogicOp')
+      if (logop) {
+        const op = this.ctoc(logop)
+        if (op == '&&' || op == '||') {
+          const typeLeft = this.compileExpression(node.node.firstChild!, frame)
+          if (typeLeft.type == 'boolean') {
+            const jumpInstr: JumpIfFalseInstruction = {
+              type: 'jump-if-false',
+              line,
+              target: -1,
+            }
+            this.classFile.bytecode.push({ type: 'duplicate-stack-top', line })
+            if (op == '||') {
+              this.classFile.bytecode.push({
+                type: 'invert-boolean',
+                line,
+              })
+            }
+            this.classFile.bytecode.push(jumpInstr)
+            this.classFile.bytecode.push({ type: 'drop-from-stack', line })
+            const typeRight = this.compileExpression(
+              node.node.lastChild!,
+              frame
+            )
+            if (typeRight.type == 'boolean') {
+              jumpInstr.target = this.classFile.bytecode.length
+              return { type: 'boolean' }
+            }
+          }
         }
       }
     }
