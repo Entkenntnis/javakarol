@@ -94,6 +94,10 @@ export class JavaVM {
         const left = this.stack.pop()
         const res = left / right
         this.stack.push(Math.sign(res) * Math.floor(Math.abs(res)))
+      } else if (instr.type == 'modulo') {
+        const right = this.stack.pop()
+        const left = this.stack.pop()
+        this.stack.push(left % right)
       } else if (instr.type == 'jump') {
         this.pc = instr.target
         continue

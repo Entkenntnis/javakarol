@@ -557,6 +557,45 @@ test('Break statement', async () => {
   )
 })
 
+test('Blocks', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      {
+        int i = 0;
+      }
+      {
+        int i = 1;
+      }
+    }
+  }
+  `,
+    (world) => {}
+  )
+})
+
+test('Blocks', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      karol.Schritt(10 % 4);
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(2)
+    }
+  )
+})
+
 async function testProgram(program: String, check: (world: World) => void) {
   const doc = Text.of(program.split('\n'))
   const tree = parser.parse(doc.sliceString(0))

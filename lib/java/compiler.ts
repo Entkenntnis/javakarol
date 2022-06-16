@@ -18,6 +18,7 @@ type Instruction =
   | SubtractInstruction
   | MultInstruction
   | IntDivInstruction
+  | ModuloInstruction
   | JumpIfFalseInstruction
   | JumpInstruction
   | CompLessInstruction
@@ -76,6 +77,11 @@ interface MultInstruction {
 
 interface IntDivInstruction {
   type: 'integer-divide'
+  line: number
+}
+
+interface ModuloInstruction {
+  type: 'modulo'
   line: number
 }
 
@@ -387,6 +393,9 @@ export class Compiler {
         } else {
           this.addWarning('Break ohne Schleife', cursor)
         }
+      } else if (type == 'Block') {
+        const subcursor = cursor.node.cursor()
+        this.compileBlock(subcursor, context)
       } else {
         this.addWarning(`Unbekannter Ausdruck "${type}"`, cursor)
       }
@@ -580,6 +589,10 @@ export class Compiler {
             }
             if (operator == '/') {
               this.classFile.bytecode.push({ type: 'integer-divide', line })
+              return { type: 'int' }
+            }
+            if (operator == '%') {
+              this.classFile.bytecode.push({ type: 'modulo', line })
               return { type: 'int' }
             }
           }
