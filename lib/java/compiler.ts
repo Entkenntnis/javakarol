@@ -153,20 +153,17 @@ class Frame {
     this.data = {}
   }
 
-  has(key: string): boolean {
-    return this.data[key] !== undefined || !!this.parent?.has(key)
-  }
-
   load(key: string): FrameEntry {
-    return this.data[key] || this.parent?.load(key)
+    console.log('load from frame', key, this)
+    if (key in this.data || !this.parent) {
+      return this.data[key]
+    } else {
+      return this.parent.load(key)
+    }
   }
 
-  store(key: string, entry: FrameEntry) {
-    if (this.data[key] === undefined && this.parent) {
-      this.parent.store(key, entry)
-    } else {
-      this.data[key] = entry
-    }
+  declareVariable(key: string, entry: FrameEntry) {
+    this.data[key] = entry
   }
 }
 
@@ -273,7 +270,7 @@ export class Compiler {
               )
             }
           }
-          frame.store(id, entry)
+          frame.declareVariable(id, entry)
           this.classFile.bytecode.push({
             type: 'store-to-frame',
             identifier: id,

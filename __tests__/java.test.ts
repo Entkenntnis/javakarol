@@ -240,26 +240,159 @@ test('Run circle with brick condition', async () => {
   )
 })
 
-// should fail
-
-test('Invalid world constructor', () => {
-  shouldNotCompile(`
+test('Arithmetic', async () => {
+  await testProgram(
+    `
   public class Programm {
 
     public static void main(String[] args) {
-      Welt welt = new Welt(4);
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int x = 6 + 4 * 9;
+      int y = x / 7;
+      int z = y - 3;
+      karol.Schritt(z);
     }
   }
-  `)
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(3)
+    }
+  )
 })
 
-function shouldNotCompile(program: string) {
-  const doc = Text.of(program.split('\n'))
-  const tree = parser.parse(doc.sliceString(0))
-  const compiler = new Compiler(tree, doc)
-  compiler.compile()
-  expect(compiler.warnings.length).toBeGreaterThan(0)
-}
+test('Comparison less than', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 0;
+      while (i < 2) {
+        karol.Schritt();
+        i++;
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(2)
+    }
+  )
+})
+
+test('Comparison less-eq and neq', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 0;
+      while (!(i >= 2)) {
+        karol.Schritt();
+        i++;
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(2)
+    }
+  )
+})
+
+test('Comparison less-eq and neq', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 0;
+      while (-2 <= -i) {
+        karol.Schritt();
+        i++;
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(3)
+    }
+  )
+})
+
+test('Comparison greater than', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 0;
+      while (3 > i) {
+        karol.Schritt();
+        i++;
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(3)
+    }
+  )
+})
+
+test('Logic Operators', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 0;
+      while (i == 0 || i == 1 || i == 2) {
+        karol.Schritt();
+        i++;
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(3)
+    }
+  )
+})
+
+test('Block variable declaration', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 0;
+      while (i == 0 || i == 1 || i == 2) {
+        int j = 1;
+        karol.Schritt(j);
+        i = i + 1;
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(3)
+    }
+  )
+})
 
 async function testProgram(program: String, check: (world: World) => void) {
   const doc = Text.of(program.split('\n'))
@@ -279,30 +412,5 @@ function createNewCore() {
   const ref = { current: { state: coreState } }
   return new Core(() => {}, ref)
 }
-
-test('Abort vm', async () => {
-  const program = `
-  public class Programm {
-    public static void main(String[] args) {
-      Welt welt = new Welt(100, 1, 1);
-      Roboter karol = new Roboter(welt);
-      karol.VerzoegerungSetzen(100);
-      karol.LinksDrehen();
-      karol.Schritt(100);
-    }
-  }`
-  const doc = Text.of(program.split('\n'))
-  const tree = parser.parse(doc.sliceString(0))
-  const compiler = new Compiler(tree, doc)
-  compiler.compile()
-  expect(compiler.warnings.length).toBe(0)
-  const core = createNewCore()
-  const jvm = new JavaVM(compiler.classFile, core)
-  //jvm.testMode = true
-  jvm.run()
-  await new Promise((r) => setTimeout(r, 500))
-  await jvm.stop()
-  expect(core.ws.world.karol.x).toBeLessThan(10)
-})
 
 export {} // make tsc happy
