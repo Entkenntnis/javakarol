@@ -23,6 +23,8 @@ export class JavaVM {
     while (this.pc < this.classFile.bytecode.length) {
       const instr = this.classFile.bytecode[this.pc]
 
+      // console.log(instr, this.stack, this.frame)
+
       this.core.mutateWs((ws) => {
         ws.ui.gutter = instr.line
       })
@@ -62,6 +64,7 @@ export class JavaVM {
                 }, ms)
               }),
           })
+          console.log('return value', instr.identifier, returnValue)
           if (returnValue !== undefined) {
             this.stack.push(returnValue)
           }
@@ -70,12 +73,48 @@ export class JavaVM {
         this.stack.push(instr.val)
       } else if (instr.type == 'pop-from-stack') {
         this.stack.pop()
+      } else if (instr.type == 'add') {
+        const right = this.stack.pop()
+        const left = this.stack.pop()
+        this.stack.push(left + right)
+      } else if (instr.type == 'subtract') {
+        const right = this.stack.pop()
+        const left = this.stack.pop()
+        this.stack.push(left - right)
+      } else if (instr.type == 'multiply') {
+        const right = this.stack.pop()
+        const left = this.stack.pop()
+        this.stack.push(left * right)
+      } else if (instr.type == 'integer-divide') {
+        const right = this.stack.pop()
+        const left = this.stack.pop()
+        const res = left / right
+        this.stack.push(Math.sign(res) * Math.floor(Math.abs(res)))
+      } else if (instr.type == 'jump') {
+        this.pc = instr.target
+        continue
+      } else if (instr.type == 'jump-if-false') {
+        const val = this.stack.pop()
+        if (val === false) {
+          await sleep(0)
+          this.pc = instr.target
+          continue
+        }
+      } else if (instr.type == 'compare-less-than') {
+        const right = this.stack.pop()
+        const left = this.stack.pop()
+        this.stack.push(left < right)
+      } else if (instr.type == 'invert-boolean') {
+        const val = this.stack.pop()
+        this.stack.push(!val)
+      } else if (instr.type == 'negate-int') {
+        const val = this.stack.pop()
+        this.stack.push(-val)
       }
 
       if (this.stopper) {
         setTimeout(this.stopper, 0)
         this.stopper = undefined
-        console.log('stop running')
         return
       }
 
@@ -85,11 +124,9 @@ export class JavaVM {
 
   async stop() {
     if (this.breakSleep) {
-      console.log('break sleep')
       setTimeout(this.breakSleep, 0)
     }
     await new Promise<void>((res) => {
-      console.log('set stopper')
       this.stopper = res
     })
   }

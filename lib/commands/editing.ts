@@ -34,7 +34,7 @@ export function lint(core: Core, view: EditorView) {
       ui.state = 'ready'
       jvm.classfile = output
     })
-    // console.log('classfile', output)
+    console.log('classfile', output)
   } else {
     core.mutateWs(({ ui }) => {
       ui.state = 'error'

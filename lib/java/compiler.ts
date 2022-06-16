@@ -1,6 +1,7 @@
 import { Diagnostic } from '@codemirror/lint'
 import { Text } from '@codemirror/state'
 import { Tree, SyntaxNodeRef } from '@lezer/common'
+import { notEqual } from 'assert'
 
 import { javaKarolApi } from './api'
 
@@ -14,6 +15,15 @@ type Instruction =
   | ApiInstruction
   | ConstantInstruction
   | PopInstruction
+  | AddInstruction
+  | SubtractInstruction
+  | MultInstruction
+  | IntDivInstruction
+  | JumpIfFalseInstruction
+  | JumpInstruction
+  | CompLessInstruction
+  | InvertInstruction
+  | NegateInstruction
 
 interface LoadInstruction {
   type: 'load-from-frame'
@@ -44,6 +54,53 @@ interface PopInstruction {
   line: number
 }
 
+interface AddInstruction {
+  type: 'add'
+  line: number
+}
+
+interface SubtractInstruction {
+  type: 'subtract'
+  line: number
+}
+
+interface MultInstruction {
+  type: 'multiply'
+  line: number
+}
+
+interface IntDivInstruction {
+  type: 'integer-divide'
+  line: number
+}
+
+interface JumpIfFalseInstruction {
+  type: 'jump-if-false'
+  target: number
+  line: number
+}
+
+interface JumpInstruction {
+  type: 'jump'
+  target: number
+  line: number
+}
+
+interface CompLessInstruction {
+  type: 'compare-less-than'
+  line: number
+}
+
+interface InvertInstruction {
+  type: 'invert-boolean'
+  line: number
+}
+
+interface NegateInstruction {
+  type: 'negate-int'
+  line: number
+}
+
 interface Rule {
   type: string
   count: number
@@ -51,43 +108,37 @@ interface Rule {
   children?: Rule[]
 }
 
-interface IntArgument {
-  type: 'int'
-  val: number
-}
-
-interface StringArgument {
-  type: 'String'
-  val: string
-}
-
-interface ObjectArgument {
-  type: 'Object'
-  class: string
-  id: string
-}
-
 type ArgumentList = FrameEntry[]
 
-type FrameEntry = ObjectEntry | IntEntry | StringEntry | NeverEntry
+export type FrameEntry =
+  | ObjectEntry
+  | IntEntry
+  | StringEntry
+  | BooleanEntry
+  | NeverEntry
 
 class Frame {
   data: { [key: string]: FrameEntry }
+  parent?: Frame
 
   constructor() {
     this.data = {}
   }
 
-  has(key: string) {
-    return this.data[key] !== undefined
+  has(key: string): boolean {
+    return this.data[key] !== undefined || !!this.parent?.has(key)
   }
 
-  load(key: string) {
-    return this.data[key]
+  load(key: string): FrameEntry {
+    return this.data[key] || this.parent?.load(key)
   }
 
   store(key: string, entry: FrameEntry) {
-    this.data[key] = entry
+    if (this.data[key] === undefined && this.parent) {
+      this.parent.store(key, entry)
+    } else {
+      this.data[key] = entry
+    }
   }
 }
 
@@ -102,6 +153,10 @@ interface IntEntry {
 
 interface StringEntry {
   type: 'String'
+}
+
+interface BooleanEntry {
+  type: 'boolean'
 }
 
 interface NeverEntry {
@@ -136,10 +191,11 @@ export class Compiler {
     this.compileBlock(mainBlock)
   }
 
-  compileBlock(block: SyntaxNodeRef) {
+  compileBlock(block: SyntaxNodeRef, parentFrame?: Frame) {
     const cursor = block.node.cursor()
     cursor.firstChild()
     const frame = new Frame()
+    frame.parent = parentFrame
     do {
       const type = cursor.type.name
       if (type == '{' || type == '}' || type == ';') continue
@@ -207,6 +263,48 @@ export class Compiler {
             }
           }
         }
+      } else if (type == 'WhileStatement') {
+        const line = this.doc.lineAt(cursor.from).number
+        const currentPc = this.classFile.bytecode.length
+        const jumpInstr: JumpIfFalseInstruction = {
+          type: 'jump-if-false',
+          target: -1,
+          line,
+        }
+        this.ensure(cursor, [
+          { type: 'while', count: 1 },
+          {
+            type: 'ParenthesizedExpression',
+            count: 1,
+            check: (n) => {
+              //this.debug(n.node.firstChild!.nextSibling!)
+              const val = this.compileExpression(
+                n.node.firstChild!.nextSibling!,
+                frame
+              )
+              if (val.type !== 'boolean') {
+                this.addWarning('Erwarte boolean in Schleifenbedingung', n)
+                return false
+              }
+              this.classFile.bytecode.push(jumpInstr)
+              return true
+            },
+          },
+          {
+            type: 'Block',
+            count: 1,
+            check: (n) => {
+              this.compileBlock(n, frame)
+              this.classFile.bytecode.push({
+                type: 'jump',
+                target: currentPc,
+                line: this.doc.lineAt(n.node.lastChild!.from).number,
+              })
+              jumpInstr.target = this.classFile.bytecode.length
+              return true
+            },
+          },
+        ])
       } else {
         this.addWarning(`Unbekannter Ausdruck "${type}"`, cursor)
       }
@@ -230,6 +328,14 @@ export class Compiler {
         line,
       })
       return { type: 'String' }
+    }
+    if (node.type.name == 'BooleanLiteral') {
+      this.classFile.bytecode.push({
+        type: 'push-constant',
+        val: this.ctoc(node) == 'true' ? true : false,
+        line,
+      })
+      return { type: 'boolean' }
     }
     if (node.type.name == 'Identifier') {
       const id = this.ctoc(node)
@@ -350,6 +456,10 @@ export class Compiler {
             identifier,
             line,
           })
+          const ret = javaKarolApi[identifier].return
+          if (ret) {
+            return ret
+          }
         } else {
           this.addWarning('Funktion nicht gefunden', node)
         }
@@ -357,6 +467,115 @@ export class Compiler {
         this.addWarning('Variable nicht gefunden', node)
       }
       return { type: 'never' }
+    }
+    if (node.type.name == 'BinaryExpression') {
+      if (node.node.getChild('ArithOp')) {
+        const operator = this.ctoc(node.node.getChild('ArithOp')!)
+        const left = node.node.firstChild
+        const right = node.node.lastChild
+        if (left && right) {
+          const leftType = this.compileExpression(left, frame)
+          const rightType = this.compileExpression(right, frame)
+          if (leftType.type == 'int' && rightType.type == 'int') {
+            if (operator == '+') {
+              this.classFile.bytecode.push({ type: 'add', line })
+              return { type: 'int' }
+            }
+            if (operator == '-') {
+              this.classFile.bytecode.push({ type: 'subtract', line })
+              return { type: 'int' }
+            }
+            if (operator == '*') {
+              this.classFile.bytecode.push({ type: 'multiply', line })
+              return { type: 'int' }
+            }
+            if (operator == '/') {
+              this.classFile.bytecode.push({ type: 'integer-divide', line })
+              return { type: 'int' }
+            }
+            if (operator == '<=') {
+              this.classFile.bytecode.push({ type: 'compare-less-than', line })
+              return { type: 'boolean' }
+            }
+          }
+          this.addWarning(
+            'Unbekannter Operator oder nicht passende Typen',
+            node
+          )
+          return { type: 'never' }
+        } else {
+          this.addWarning('Fehlende Werte in Operator', node)
+          return { type: 'never' }
+        }
+      }
+      if (node.node.getChild('CompareOp')) {
+        const operator = this.ctoc(node.node.getChild('CompareOp')!)
+        const left = node.node.firstChild
+        const right = node.node.lastChild
+        if (left && right) {
+          const leftType = this.compileExpression(left, frame)
+          const rightType = this.compileExpression(right, frame)
+          if (leftType.type == 'int' && rightType.type == 'int') {
+            if (operator == '<') {
+              this.classFile.bytecode.push({ type: 'compare-less-than', line })
+              return { type: 'boolean' }
+            }
+          }
+          this.addWarning(
+            'Unbekannter Operator oder nicht passende Typen',
+            node
+          )
+          return { type: 'never' }
+        } else {
+          this.addWarning('Fehlende Werte in Operator', node)
+          return { type: 'never' }
+        }
+      }
+    }
+    if (node.type.name == 'UnaryExpression') {
+      const logop = node.node.getChild('LogicOp')
+      if (logop) {
+        const op = this.ctoc(logop)
+        const expr = node.node.lastChild!
+        const exprType = this.compileExpression(expr, frame)
+        if (exprType.type == 'boolean') {
+          this.classFile.bytecode.push({ type: 'invert-boolean', line })
+          return { type: 'boolean' }
+        }
+        this.addWarning(
+          'Unbekannter Logischer Operator oder nicht passende Typen',
+          node
+        )
+      }
+    }
+    if (node.type.name == 'AssignmentExpression') {
+      // WTF, why is this an expression??? is the difference relevant at all?
+      let identifier = ''
+      this.ensure(node, [
+        {
+          type: 'Identifier',
+          count: 1,
+          check: (n) => {
+            identifier = this.ctoc(n)
+            return true
+          },
+        },
+        { type: 'AssignOp', count: 1 },
+      ])
+      const val = node.node.lastChild
+      if (val) {
+        const type = this.compileExpression(val, frame)
+        const entry = frame.load(identifier)
+        if (!entry || !isEqualType(type, entry)) {
+          this.addWarning('Zuweisung mit falschen Typ', node)
+        }
+        this.classFile.bytecode.push({
+          type: 'store-to-frame',
+          identifier,
+          line,
+        })
+        return { type: 'never' }
+      }
     }
     this.addWarning(`Unbekannter Ausdruck ${node.type.name}`, node)
     return { type: 'never' }
@@ -468,7 +687,7 @@ export class Compiler {
           `${rule.type}: ${matches.length} von ${rule.count}`,
           node
         )
-        this.debug(node)
+        this.debug(node, 'Fehler')
         return
       }
       if (rule.check) {
@@ -529,4 +748,11 @@ export class Compiler {
       message,
     })
   }
+}
+
+function isEqualType(a: FrameEntry, b: FrameEntry) {
+  return (
+    a.type == b.type &&
+    (a.type !== 'Object' || b.type !== 'Object' || a.class == b.class)
+  )
 }

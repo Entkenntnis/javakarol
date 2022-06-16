@@ -83,7 +83,7 @@ export function Workspace() {
               />{' '}
               Beispiele
             </button>
-            <span className="border-l border-gray-300 mx-3"></span>
+            <span className="border-l border-gray-300 mx-1"></span>
             <button
               className="px-2 rounded bg-yellow-100 hover:bg-yellow-200"
               onClick={() => {
@@ -97,7 +97,7 @@ export function Workspace() {
               />{' '}
               Code teilen
             </button>
-            <span className="border-l border-gray-300 mx-3"></span>
+            <span className="border-l border-gray-300 mx-1"></span>
           </div>
           <div className="mr-1 my-1">
             <span className="border-l border-gray-300 mx-3"></span>
