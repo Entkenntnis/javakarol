@@ -54,7 +54,7 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
     },
   },
   Roboter_constructor_Welt: {
-    invoke: async ({ sleep }) => {
+    invoke: async ({ sleep }): Promise<Robot> => {
       await sleep(createWorldDelay)
       const robot: Robot = { execDelayMs: 120 }
       return robot
@@ -150,7 +150,7 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
     },
   },
   Roboter_IstWand: {
-    invoke: async ({ core }) => {
+    invoke: async ({ core }): Promise<boolean> => {
       const { x, y, dir } = core.ws.world.karol
       const newpos = move(x, y, dir, core.ws.world)
       return !newpos
@@ -158,7 +158,7 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
     return: { type: 'boolean' },
   },
   Roboter_IstZiegel: {
-    invoke: async ({ core }) => {
+    invoke: async ({ core }): Promise<boolean> => {
       const { x, y, dir } = core.ws.world.karol
       const newpos = moveRaw(x, y, dir, core.ws.world)
       if (!newpos) {
@@ -167,6 +167,13 @@ export const javaKarolApi: { [key: string]: ApiMethod } = {
         const count = core.ws.world.bricks[newpos.y][newpos.x]
         return count > 0
       }
+    },
+    return: { type: 'boolean' },
+  },
+  Roboter_IstMarke: {
+    invoke: async ({ core }): Promise<boolean> => {
+      const { x, y, dir } = core.ws.world.karol
+      return core.ws.world.marks[y][x]
     },
     return: { type: 'boolean' },
   },

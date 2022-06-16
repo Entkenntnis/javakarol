@@ -64,7 +64,7 @@ export class JavaVM {
                 }, ms)
               }),
           })
-          console.log('return value', instr.identifier, returnValue)
+          //console.log('return value', instr.identifier, returnValue)
           if (returnValue !== undefined) {
             this.stack.push(returnValue)
           }

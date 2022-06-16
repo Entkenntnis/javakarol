@@ -509,6 +509,8 @@ export class Compiler {
         }
       }
       if (node.node.getChild('CompareOp')) {
+        // TODO: move on here...
+
         const operator = this.ctoc(node.node.getChild('CompareOp')!)
         const left = node.node.firstChild
         const right = node.node.lastChild
@@ -536,21 +538,135 @@ export class Compiler {
       const logop = node.node.getChild('LogicOp')
       if (logop) {
         const op = this.ctoc(logop)
-        const expr = node.node.lastChild!
-        const exprType = this.compileExpression(expr, frame)
-        if (exprType.type == 'boolean') {
-          this.classFile.bytecode.push({ type: 'invert-boolean', line })
-          return { type: 'boolean' }
+        if (op == '!') {
+          const expr = node.node.lastChild!
+          const exprType = this.compileExpression(expr, frame)
+          if (exprType.type == 'boolean') {
+            this.classFile.bytecode.push({ type: 'invert-boolean', line })
+            return { type: 'boolean' }
+          }
         }
-        this.addWarning(
-          'Unbekannter Logischer Operator oder nicht passende Typen',
-          node
-        )
       }
+      const arithop = node.node.getChild('ArithOp')
+      if (arithop) {
+        const op = this.ctoc(arithop)
+        if (op == '-') {
+          const expr = node.node.lastChild!
+          const exprType = this.compileExpression(expr, frame)
+          if (exprType.type == 'int') {
+            this.classFile.bytecode.push({ type: 'negate-int', line })
+            return { type: 'int' }
+          }
+        }
+      }
+      this.debug(node)
+      this.addWarning(
+        'Unbekannter Logischer Operator oder nicht passende Typen',
+        node
+      )
+    }
+    if (node.type.name == 'UpdateExpression') {
+      const updateOp = node.node.getChild('UpdateOp')
+      if (updateOp) {
+        const op = this.ctoc(updateOp)
+        const isFront = node.node.firstChild!.type.name == 'UpdateOp'
+        const identifierNode = isFront
+          ? node.node.lastChild
+          : node.node.firstChild
+        if (identifierNode) {
+          const identifier = this.ctoc(identifierNode)
+          const entry = frame.load(identifier)
+          if (entry && entry.type == 'int') {
+            //console.log(identifier, isFront, op)
+            if (isFront) {
+              this.classFile.bytecode.push({
+                type: 'load-from-frame',
+                identifier,
+                line,
+              })
+              this.classFile.bytecode.push({
+                type: 'push-constant',
+                val: 1,
+                line,
+              })
+              this.classFile.bytecode.push({
+                type: op == '++' ? 'add' : 'subtract',
+                line,
+              })
+              this.classFile.bytecode.push({
+                type: 'store-to-frame',
+                identifier,
+                line,
+              })
+              this.classFile.bytecode.push({
+                type: 'load-from-frame',
+                identifier,
+                line,
+              })
+            } else {
+              this.classFile.bytecode.push({
+                type: 'load-from-frame',
+                identifier,
+                line,
+              })
+              this.classFile.bytecode.push({
+                type: 'load-from-frame',
+                identifier,
+                line,
+              })
+              this.classFile.bytecode.push({
+                type: 'push-constant',
+                val: 1,
+                line,
+              })
+              this.classFile.bytecode.push({
+                type: op == '++' ? 'add' : 'subtract',
+                line,
+              })
+              this.classFile.bytecode.push({
+                type: 'store-to-frame',
+                identifier,
+                line,
+              })
+            }
+            return { type: 'int' }
+          }
+        }
+      }
+      /*const logop = node.node.getChild('LogicOp')
+      if (logop) {
+        const op = this.ctoc(logop)
+        if (op == '!') {
+          const expr = node.node.lastChild!
+          const exprType = this.compileExpression(expr, frame)
+          if (exprType.type == 'boolean') {
+            this.classFile.bytecode.push({ type: 'invert-boolean', line })
+            return { type: 'boolean' }
+          }
+        }
+      }
+      const arithop = node.node.getChild('ArithOp')
+      if (arithop) {
+        const op = this.ctoc(arithop)
+        if (op == '-') {
+          const expr = node.node.lastChild!
+          const exprType = this.compileExpression(expr, frame)
+          if (exprType.type == 'int') {
+            this.classFile.bytecode.push({ type: 'negate-int', line })
+            return { type: 'int' }
+          }
+        }
+      }*/
+      this.debug(node)
+      this.addWarning(
+        'Unbekannte UpdateExpression oder nicht passende Typen',
+        node
+      )
     }
     if (node.type.name == 'AssignmentExpression') {
       // WTF, why is this an expression??? is the difference relevant at all?
       let identifier = ''
+      let op = ''
       this.ensure(node, [
         {
           type: 'Identifier',
@@ -560,21 +676,56 @@ export class Compiler {
             return true
           },
         },
-        { type: 'AssignOp', count: 1 },
+        {
+          type: 'AssignOp',
+          count: 1,
+          check: (n) => {
+            op = this.ctoc(n)
+            return false
+          },
+        },
       ])
       const val = node.node.lastChild
       if (val) {
-        const type = this.compileExpression(val, frame)
-        const entry = frame.load(identifier)
-        if (!entry || !isEqualType(type, entry)) {
-          this.addWarning('Zuweisung mit falschen Typ', node)
+        if (op == '=') {
+          const type = this.compileExpression(val, frame)
+          const entry = frame.load(identifier)
+          if (!entry || !isEqualType(type, entry)) {
+            this.addWarning('Zuweisung mit falschen Typ', node)
+          }
+          this.classFile.bytecode.push({
+            type: 'store-to-frame',
+            identifier,
+            line,
+          })
+          return { type: 'never' }
+        } else if (op == '+=' || op == '-=' || op == '*=' || op == '/=') {
+          this.classFile.bytecode.push({
+            type: 'load-from-frame',
+            identifier,
+            line,
+          })
+          const type = this.compileExpression(val, frame)
+          const entry = frame.load(identifier)
+          if (!entry || !isEqualType(type, entry) || entry.type !== 'int') {
+            this.addWarning('Zuweisung mit falschen Typ', node)
+          }
+          this.classFile.bytecode.push({
+            type: {
+              '+=': 'add',
+              '-=': 'subtract',
+              '*=': 'multiply',
+              '/=': 'integer-divide',
+            }[op] as any, // what ever,
+            line,
+          })
+          this.classFile.bytecode.push({
+            type: 'store-to-frame',
+            identifier,
+            line,
+          })
+          return { type: 'never' }
         }
-        this.classFile.bytecode.push({
-          type: 'store-to-frame',
-          identifier,
-          line,
-        })
-        return { type: 'never' }
       }
     }
     this.addWarning(`Unbekannter Ausdruck ${node.type.name}`, node)
