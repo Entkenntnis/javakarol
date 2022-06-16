@@ -210,6 +210,17 @@ test('Main with wrong type', () => {
   `)
 })
 
+test('No redeclaration of variable', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void main(Welt[] args) {
+      int i = 4;
+      int i = 5;
+    }
+  }
+  `)
+})
+
 function shouldNotCompile(program: string) {
   const doc = Text.of(program.split('\n'))
   const tree = parser.parse(doc.sliceString(0))

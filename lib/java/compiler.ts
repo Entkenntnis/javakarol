@@ -145,6 +145,26 @@ export type FrameEntry =
   | BooleanEntry
   | NeverEntry
 
+class Context {
+  frame: Frame
+
+  constructor() {
+    this.frame = new Frame()
+  }
+
+  pushFrame() {
+    const newFrame = new Frame()
+    newFrame.parent = this.frame
+    this.frame = newFrame
+  }
+
+  popFrame() {
+    if (this.frame.parent) {
+      this.frame = this.frame.parent
+    }
+  }
+}
+
 class Frame {
   data: { [key: string]: FrameEntry }
   parent?: Frame
@@ -154,7 +174,7 @@ class Frame {
   }
 
   load(key: string): FrameEntry {
-    console.log('load from frame', key, this)
+    // console.log('load from frame', key, this)
     if (key in this.data || !this.parent) {
       return this.data[key]
     } else {
@@ -213,14 +233,13 @@ export class Compiler {
     if (!mainBlock) return
 
     // pass 3 - compile block
-    this.compileBlock(mainBlock)
+    this.compileBlock(mainBlock, new Context())
   }
 
-  compileBlock(block: SyntaxNodeRef, parentFrame?: Frame) {
+  compileBlock(block: SyntaxNodeRef, context: Context) {
     const cursor = block.node.cursor()
     cursor.firstChild()
-    const frame = new Frame()
-    frame.parent = parentFrame
+    context.pushFrame()
     do {
       const type = cursor.type.name
       if (type == '{' || type == '}' || type == ';') continue
@@ -243,6 +262,13 @@ export class Compiler {
                 count: 1,
                 check: (n) => {
                   id = this.ctoc(n)
+                  if (context.frame.load(id)) {
+                    this.addWarning(
+                      'Variable kann nicht neu definiert werden',
+                      n
+                    )
+                    return false
+                  }
                   return true
                 },
               },
@@ -259,7 +285,7 @@ export class Compiler {
           const line = this.doc.lineAt(cursor.from).number
           const entry = this.compileExpression(
             variableDeclarator.node.lastChild,
-            frame
+            context.frame
           )
           if (entry.type !== 'never') {
             const entryType = entry.type == 'Object' ? entry.class : entry.type
@@ -270,7 +296,7 @@ export class Compiler {
               )
             }
           }
-          frame.declareVariable(id, entry)
+          context.frame.declareVariable(id, entry)
           this.classFile.bytecode.push({
             type: 'store-to-frame',
             identifier: id,
@@ -281,7 +307,7 @@ export class Compiler {
         const subcursor = cursor.node.cursor()
         if (subcursor.firstChild()) {
           if (subcursor.type.name !== ';') {
-            const entry = this.compileExpression(subcursor, frame)
+            const entry = this.compileExpression(subcursor, context.frame)
             const line = this.doc.lineAt(subcursor.from).number
             if (entry.type !== 'never') {
               this.classFile.bytecode.push({ type: 'drop-from-stack', line }) // ignore value
@@ -305,7 +331,7 @@ export class Compiler {
               //this.debug(n.node.firstChild!.nextSibling!)
               const val = this.compileExpression(
                 n.node.firstChild!.nextSibling!,
-                frame
+                context.frame
               )
               if (val.type !== 'boolean') {
                 this.addWarning('Erwarte boolean in Schleifenbedingung', n)
@@ -319,7 +345,7 @@ export class Compiler {
             type: 'Block',
             count: 1,
             check: (n) => {
-              this.compileBlock(n, frame)
+              this.compileBlock(n, context)
               this.classFile.bytecode.push({
                 type: 'jump',
                 target: currentPc,
@@ -334,6 +360,7 @@ export class Compiler {
         this.addWarning(`Unbekannter Ausdruck "${type}"`, cursor)
       }
     } while (cursor.nextSibling())
+    context.popFrame()
   }
 
   compileExpression(node: SyntaxNodeRef, frame: Frame): FrameEntry {
