@@ -394,6 +394,29 @@ test('Block variable declaration', async () => {
   )
 })
 
+test('Boolean and string literals', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      String s = "test";
+      int i = 0;
+      while (true && (false || i < 3)) {
+        i++;
+        karol.Schritt();
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(3)
+    }
+  )
+})
+
 async function testProgram(program: String, check: (world: World) => void) {
   const doc = Text.of(program.split('\n'))
   const tree = parser.parse(doc.sliceString(0))

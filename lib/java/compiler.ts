@@ -524,18 +524,11 @@ export class Compiler {
               this.classFile.bytecode.push({ type: 'integer-divide', line })
               return { type: 'int' }
             }
-            if (operator == '<=') {
-              this.classFile.bytecode.push({ type: 'compare-less-than', line })
-              return { type: 'boolean' }
-            }
           }
           this.addWarning(
             'Unbekannter Operator oder nicht passende Typen',
             node
           )
-          return { type: 'never' }
-        } else {
-          this.addWarning('Fehlende Werte in Operator', node)
           return { type: 'never' }
         }
       }

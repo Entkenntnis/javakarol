@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "analyze": "cross-env ANALYZE=true next build",
-    "test": "jest --coverage"
+    "test": "jest --coverage --silent"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.0.0",
