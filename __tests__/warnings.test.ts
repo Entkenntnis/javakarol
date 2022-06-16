@@ -116,6 +116,100 @@ test('Missing operand', () => {
   `)
 })
 
+test('Inequality type mismatch', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 0;
+      while (i != "1") {
+        i++;
+        karol.Schritt();
+      }
+    }
+  }
+  `)
+})
+
+test('Inequality type mismatch', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = ~5;
+    }
+  }
+  `)
+})
+
+test('Update expression type mismatch', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void main(String[] args) {
+      int x = "4"++;
+    }
+  }
+  `)
+})
+
+test('Update expression type mismatch with class', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      welt == karol;
+    }
+  }
+  `)
+})
+
+test('Assignment type mismatch', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 4;
+      i = karol;
+    }
+  }
+  `)
+})
+
+test('Assignment type mismatch 2', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 4;
+      i += karol;
+    }
+  }
+  `)
+})
+
+test('No method main', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void mainn(String[] args) {
+    }
+  }
+  `)
+})
+
+test('Main with wrong type', () => {
+  shouldNotCompile(`
+  public class Programm {
+    public static void main(Welt[] args) {
+    }
+  }
+  `)
+})
+
 function shouldNotCompile(program: string) {
   const doc = Text.of(program.split('\n'))
   const tree = parser.parse(doc.sliceString(0))

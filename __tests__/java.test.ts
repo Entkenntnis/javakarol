@@ -417,6 +417,77 @@ test('Boolean and string literals', async () => {
   )
 })
 
+test('Inequality', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 0;
+      while (i != 3) {
+        i++;
+        karol.Schritt();
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(3)
+    }
+  )
+})
+
+test('Update expression pre/postfix', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 0;
+      while (i != 3) {
+        ++i;
+        i--;
+        i++;
+        --i;
+        i++;
+        karol.Schritt();
+      }
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(3)
+    }
+  )
+})
+
+test('Assignment expressions', async () => {
+  await testProgram(
+    `
+  public class Programm {
+
+    public static void main(String[] args) {
+      Welt welt = new Welt(10, 10);
+      Roboter karol = new Roboter(welt);
+      int i = 1;
+      i += 1;
+      i *= 2;
+      i /= 2;
+      i -= 1;
+      karol.Schritt(i);
+    }
+  }
+  `,
+    (world) => {
+      expect(world.karol.y).toBe(1)
+    }
+  )
+})
+
 async function testProgram(program: String, check: (world: World) => void) {
   const doc = Text.of(program.split('\n'))
   const tree = parser.parse(doc.sliceString(0))

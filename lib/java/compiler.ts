@@ -575,8 +575,6 @@ export class Compiler {
           )
           return { type: 'never' }
         }
-        this.addWarning('Fehlende Werte in Operator', node)
-        return { type: 'never' }
       }
       const logop = node.node.getChild('LogicOp')
       if (logop) {
