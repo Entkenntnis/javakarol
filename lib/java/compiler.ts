@@ -719,31 +719,6 @@ export class Compiler {
           }
         }
       }
-      /*const logop = node.node.getChild('LogicOp')
-      if (logop) {
-        const op = this.ctoc(logop)
-        if (op == '!') {
-          const expr = node.node.lastChild!
-          const exprType = this.compileExpression(expr, frame)
-          if (exprType.type == 'boolean') {
-            this.classFile.bytecode.push({ type: 'invert-boolean', line })
-            return { type: 'boolean' }
-          }
-        }
-      }
-      const arithop = node.node.getChild('ArithOp')
-      if (arithop) {
-        const op = this.ctoc(arithop)
-        if (op == '-') {
-          const expr = node.node.lastChild!
-          const exprType = this.compileExpression(expr, frame)
-          if (exprType.type == 'int') {
-            this.classFile.bytecode.push({ type: 'negate-int', line })
-            return { type: 'int' }
-          }
-        }
-      }*/
-      this.debug(node)
       this.addWarning(
         'Unbekannte UpdateExpression oder nicht passende Typen',
         node

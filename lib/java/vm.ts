@@ -10,6 +10,7 @@ export class JavaVM {
   frame: { [key: string]: any }
   stopper?: () => void
   breakSleep?: () => void
+  testMode: boolean = false
 
   constructor(cf: ClassFile, core: Core) {
     this.classFile = cf
@@ -58,10 +59,13 @@ export class JavaVM {
                   vm.breakSleep = undefined
                   res()
                 }
-                setTimeout(() => {
-                  vm.breakSleep = undefined
-                  res()
-                }, ms)
+                setTimeout(
+                  () => {
+                    vm.breakSleep = undefined
+                    res()
+                  },
+                  this.testMode ? 0 : ms
+                )
               }),
           })
           //console.log('return value', instr.identifier, returnValue)
